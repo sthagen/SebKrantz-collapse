@@ -1,7 +1,7 @@
 context("fsubset and ftransform")
 
 # rm(list = ls())
-
+set.seed(101)
 v <- na_insert(mtcars$mpg)
 m <- na_insert(as.matrix(mtcars))
 
@@ -39,6 +39,9 @@ test_that("fsubset works like base::subset for data frames", {
 test_that("fsubset column renaming", {
 
   expect_equal(names(fsubset(airquality, Temp > 90, OZ = Ozone, Temp)), .c(OZ, Temp))
+  expect_equal(names(fsubset(mtcars, cyl == 4, bla = cyl)), "bla")
+
+
 
 })
 
@@ -48,13 +51,16 @@ test_that("ss works like an improved version of [", { # replaced setRownames wit
   expect_equal(ss(airquality, 1:100, -(1:3)), airquality[1:100, -(1:3)])
   expect_equal(unattrib(ss(airquality, -(1:100), -(1:3))), unattrib(airquality[-(1:100), -(1:3)]))
   nam <- names(airquality)[2:5]
+  set.seed(101)
   v <- sample.int(fnrow(airquality), 100)
   expect_equal(unattrib(ss(airquality, v, nam)), unattrib(airquality[v, nam, drop = FALSE]))
   expect_equal(unattrib(ss(airquality, -v, nam)), unattrib(airquality[-v, nam, drop = FALSE]))
+  set.seed(101)
   vl <- sample(c(TRUE, FALSE), fnrow(airquality), replace = TRUE)
   cl <- sample(c(TRUE, FALSE), fncol(airquality), replace = TRUE)
   expect_equal(unattrib(ss(airquality, vl, nam)), unattrib(airquality[vl, nam, drop = FALSE]))
   expect_equal(unattrib(ss(airquality, vl, cl)), unattrib(airquality[vl, cl, drop = FALSE]))
+  set.seed(101)
   vl <- na_insert(vl)
   cl[4L] <- NA
   expect_equal(unattrib(ss(airquality, vl, nam)), unattrib(airquality[vl & !is.na(vl), nam, drop = FALSE]))
@@ -82,13 +88,34 @@ test_that("fcompute works well", {
 
 })
 
+test_that("fcomputev works well", {
+
+  expect_equal(fcomputev(iris, is.numeric, log), dapply(nv(iris), log))
+  expect_equal(fcomputev(iris, is.numeric, fcumsum, apply = FALSE), fcumsum(nv(iris)))
+  expect_equal(fcomputev(iris, is.numeric, `/`, Sepal.Length), nv(iris) %c/% iris$Sepal.Length)
+  expect_equal(fcomputev(iris, is.numeric, fmean, Species, TRA = "replace", apply = FALSE),
+               fmean(nv(iris), iris$Species, TRA = "replace"))
+
+  expect_equal(fcomputev(iris, is.numeric, log, keep = "Species"), colorder(ftransformv(iris, is.numeric, log), Species))
+  expect_equal(fcomputev(iris, is.numeric, log, keep = names(iris)), ftransformv(iris, is.numeric, log))
+  expect_equal(fcomputev(iris, is.numeric, fcumsum, apply = FALSE, keep = "Species"), colorder(ftransformv(iris, is.numeric, fcumsum, apply = FALSE), Species))
+  expect_equal(fcomputev(iris, is.numeric, fcumsum, apply = FALSE, keep = names(iris)), ftransformv(iris, is.numeric, fcumsum, apply = FALSE))
+  expect_equal(fcomputev(iris, is.numeric, `/`, Sepal.Length, keep = "Species"), colorder(ftransformv(iris, is.numeric, `/`, Sepal.Length), Species))
+  expect_equal(fcomputev(iris, is.numeric, `/`, Sepal.Length, keep = names(iris)), ftransformv(iris, is.numeric, `/`, Sepal.Length))
+  expect_equal(fcomputev(iris, is.numeric, fmean, Species, TRA = "replace", apply = FALSE, keep = "Species"),
+               colorder(ftransformv(iris, is.numeric, fmean, Species, TRA = "replace", apply = FALSE), Species))
+  expect_equal(fcomputev(iris, is.numeric, fmean, Species, TRA = "replace", apply = FALSE, keep = names(iris)),
+               ftransformv(iris, is.numeric, fmean, Species, TRA = "replace", apply = FALSE))
+
+})
+
 
 
 # Still do wrong input...
 
 test_that("fsubset error for wrong input", {
   # expect_error(fsubset(mtcars, mpg))
-  # expect_error(fsubset(mtcars, mpg:cyl))
+  expect_warning(fsubset(mtcars, mpg:cyl))
   expect_error(fsubset(mtcars, "mpg"))
   expect_error(fsubset(mtcars, TRUE))
   expect_error(fsubset(mtcars, mpg > 15, cyl < 4))
