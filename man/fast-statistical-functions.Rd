@@ -61,7 +61,7 @@ Please see the documentation of individual functions.
 \section{Notes}{
 \itemize{
 \item Panel-decomposed (i.e. between and within) statistics as well as grouped and weighted skewness and kurtosis are implemented in \code{\link{qsu}}.
-\item The vector-valued functions and operators \code{\link[=fscale]{fscale/STD}}, \code{\link[=fbetween]{fbetween/B}}, \code{\link[=fhdbetween]{fhdbetween/HDB}}, \code{\link[=fwithin]{fwithin/W}}, \code{\link[=fhdwithin]{fhdwithin/HDW}}, \code{\link[=flag]{flag/L/F}}, \code{\link[=fdiff]{fdiff/D/Dlog}} and \code{\link[=fgrowth]{fgrowth/G}} are documented under \link[=data-transformations]{Data Transformations} and \link[=time-series-panel-series]{Time Series and Panel Series}. These functions also support \code{plm::pseries} and \code{plm::pdata.frame}'s.
+\item The vector-valued functions and operators \code{\link{fcumsum}}, \code{\link[=fscale]{fscale/STD}}, \code{\link[=fbetween]{fbetween/B}}, \code{\link[=fhdbetween]{fhdbetween/HDB}}, \code{\link[=fwithin]{fwithin/W}}, \code{\link[=fhdwithin]{fhdwithin/HDW}}, \code{\link[=flag]{flag/L/F}}, \code{\link[=fdiff]{fdiff/D/Dlog}} and \code{\link[=fgrowth]{fgrowth/G}} are documented under \link[=data-transformations]{Data Transformations} and \link[=time-series-panel-series]{Time Series and Panel Series}. These functions also support \code{plm::pseries} and \code{plm::pdata.frame}'s.
 }
 }
 \seealso{
@@ -98,15 +98,15 @@ fmode(wlddev, wlddev$income)             # Grouped statistical modes ..
 m <- qM(mtcars)
 fsum(m)
 fsum(m, g) # ..
-\donttest{
+% \donttest{
 ## method for grouped data frames - created with dplyr::group_by or fgroup_by
 library(dplyr)
-mtcars |> group_by(cyl,vs,am) |> select(mpg,carb) |> fsum()
-mtcars |> fgroup_by(cyl,vs,am) |> fselect(mpg,carb) |> fsum() # equivalent and faster !!
-mtcars |> fgroup_by(cyl,vs,am) |> fsum(TRA = "\%")
-mtcars |> fgroup_by(cyl,vs,am) |> fmean(hp)         # weighted grouped mean, save sum of weights
-mtcars |> fgroup_by(cyl,vs,am) |> fmean(hp, keep.group_vars = FALSE)
-}
+mtcars \%>\% group_by(cyl,vs,am) \%>\% select(mpg,carb) \%>\% fsum()
+mtcars \%>\% fgroup_by(cyl,vs,am) \%>\% fselect(mpg,carb) \%>\% fsum() # equivalent and faster !!
+mtcars \%>\% fgroup_by(cyl,vs,am) \%>\% fsum(TRA = "\%")
+mtcars \%>\% fgroup_by(cyl,vs,am) \%>\% fmean(hp)         # weighted grouped mean, save sum of weights
+mtcars \%>\% fgroup_by(cyl,vs,am) \%>\% fmean(hp, keep.group_vars = FALSE)
+% }
 }
 }
 \section{Benchmark}{\preformatted{
