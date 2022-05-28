@@ -15,7 +15,7 @@ Fast Unique Elements / Rows
 
 \code{fnunique} is an alternative to \code{NROW(unique(x))} (or \code{data.table::uniqueN, kit::uniqLen, dplyr::n_distinct}).
 
-The \emph{collapse} versions are versatile and highly competitive on data frames.
+The \emph{collapse} versions are versatile and highly competitive. % on data frames.
 }
 \usage{
 funique(x, \dots)
@@ -51,14 +51,14 @@ fnunique(x) # Fast NROW(unique(x))
 \item{drop.index.levels}{character. Either \code{"id"}, \code{"time"}, \code{"all"} or \code{"none"}. See \link{indexing}.}
 }
 \details{
-If \code{x} is a data frame / list and all rows are already unique, then \code{x} is returned. Otherwise a copy of \code{x} with duplicate rows removed is returned.  See \code{\link{group}} for some additional computational details.
+If all values/rows are already unique, then \code{x} is returned. Otherwise a copy of \code{x} with duplicate rows removed is returned.  See \code{\link{group}} for some additional computational details.
 
 The \emph{sf} method simply ignores the geometry column when determining unique values.
 
 Methods for indexed data also subset the index accordingly.
 }
 \note{
-No matrix method is provided. Please see \code{kit::funique} for a fast alternative with a matrix method. The \emph{kit} version is also often faster for vectors.
+No matrix method is provided. Please see \code{kit::funique} for a fast alternative with a matrix method. % The \emph{kit} version is also often faster for vectors.
 }
 \value{
 \code{x} with duplicate elements/rows removed. % sorted in ascending order if \code{sort = TRUE}, and in order of first occurrence if \code{sort = FALSE}.
