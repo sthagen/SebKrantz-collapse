@@ -85,6 +85,17 @@ such expressions on a data subset of one column for each group, they are
 now turned into a function
 e.g. <code>function(x) cumsum(sort(x)) / sum(x)</code> which is applied
 to a single vector split by groups.</p></li>
+<li><p><code>fsummarise</code> now also adds groupings to transformation
+functions and operators, which allows full vectorization of more complex
+tasks involving transformations which are subsequently aggregated. A
+prime example is grouped bivariate linear model fitting, which can now
+be done using
+<code>mtcars |&gt; fgroup_by(cyl) |&gt; fsummarise(slope = fsum(W(mpg), hp) / fsum(W(mpg)^2))</code>.
+Before 1.8.7 it was necessary to do a mutate step first
+e.g. <code>mtcars |&gt; fgroup_by(cyl) |&gt; fmutate(dm_mpg = W(mpg)) |&gt; fsummarise(slope = fsum(dm_mpg, hp) / fsum(dm_mpg^2))</code>,
+because <code>fsummarise</code> did not add groupings to transformation
+functions like <code>fwithin/W</code>. Thanks to Brodie Gaslam for
+making me aware of this.</p></li>
 <li><p>Argument <code>return.groups</code> from <code>GRP.default</code>
 is now also available in <code>fgroup_by</code>, allowing grouped data
 frames without materializing the unique grouping columns. This allows
@@ -94,6 +105,15 @@ Similarly for aggregation with dropping of grouping columns
 <code>mtcars |&gt; fgroup_by(cyl, return.groups = FALSE) |&gt; fmean()</code>
 is equivalent and faster than
 <code>mtcars |&gt; fgroup_by(cyl) |&gt; fmean(keep.group_vars = FALSE)</code>.</p></li>
+<li><p><code>flm</code> and <code>fFtest</code> are now internal generic
+with an added formula method
+e.g. <code>flm(mpg ~ hp + carb, mtcars, weights = wt)</code> or
+<code>fFtest(mpg ~ hp + carb | vs + am, mtcars, weights = wt)</code> in
+addition to the programming interface. Thanks to Grant McDermott for
+suggesting.</p></li>
+<li><p>Added method <code>as.data.frame.qsu</code>, to efficiently turn
+the default array outputs from <code><a href="../reference/qsu.html">qsu()</a></code> into tidy data
+frames.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.8.6" id="collapse-186">collapse 1.8.6<small>2022-06-14</small><a class="anchor" aria-label="anchor" href="#collapse-186"></a></h2>
@@ -593,7 +613,7 @@ be called if <em>collapse</em> is not attached.</p></li>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.7.0" id="collapse-170">collapse 1.7.0<small>2022-01-14</small><a class="anchor" aria-label="anchor" href="#collapse-170"></a></h2>
 <p><em>collapse</em> 1.7.0, released mid January 2022, brings major
-improvements in the computational backend of the package, it’s data
+improvements in the computational backend of the package, its data
 manipulation capabilities, and a whole set of new functions that enable
 more flexible and memory efficient R programming - significantly
 enhancing the language itself. For the vast majority of codes, updating
@@ -700,7 +720,7 @@ It is also used in internal groupings performed in data transformation
 functions such as <code>fwithin</code> (when no factor or ‘GRP’ object
 is provided to the <code>g</code> argument). The speed of the algorithm
 is very promising (often superior to <code>radixorder</code>), and it
-could be used in more places still. I welcome any feedback on it’s
+could be used in more places still. I welcome any feedback on its
 performance on different datasets.</p></li>
 <li><p>Function <code>gsplit</code> provides an efficient alternative to
 <code>split</code> based on grouping objects. It is used as a new
