@@ -1,8 +1,23 @@
-# collapse 1.8.9.9000
+# collapse 1.8.9
+
+* Fixed some warnings on rchk and newer C compilers (LLVM clang 10+). 
 
 * `.pseries` / `.indexed_series` methods also change the implicit class of the vector (attached after `"pseries"`), if the data type changed. e.g. calling a function like `fgrowth` on an integer pseries changed the data type to double, but the "integer" class was still attached after "pseries".
 
 * Fixed bad testing for SE inputs in `fgroup_by()` and `findex_by()`. See #320. 
+
+* Added `rsplit.matrix` method. 
+
+* `descr()` now by default also reports 10% and 90% quantiles for numeric variables (in line with STATA's detailed summary statistics), and can also be applied to 'pseries' / 'indexed_series'. Furthermore, `descr()` itself now has an argument `stepwise` such that `descr(big_data, stepwise = TRUE)` yields computation of summary statistics on a variable-by-variable basis (and the finished 'descr' object is returned invisibly). The printed result is thus identical to `print(descr(big_data), stepwise = TRUE)`, with the difference that the latter first does the entire computation whereas the former computes statistics on demand.   
+
+<!-- * Added method `funique.grouped_df`. ???? -->
+
+* Function `ss()` has a new argument `check = TRUE`. Setting `check = FALSE` allows subsetting data frames / lists with positive integers without checking whether integers are positive or in-range. For programmers. 
+
+* Function `get_vars()` has a new argument `rename` allowing select-renaming of columns in standard evaluation programming, e.g. `get_vars(mtcars, c(newname = "cyl", "vs", "am"), rename = TRUE)`. The default is `rename = FALSE`, to warrant full backwards compatibility. See #327. 
+
+* Added helper function `setattrib()`, to set a new attribute list for an object by reference + invisible return. This is different from the existing function `setAttrib()` (note the capital A), which takes a shallow copy of list-like objects and returns the result.   
+
 
 # collapse 1.8.8
 
