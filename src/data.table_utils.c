@@ -6,6 +6,24 @@
 #include "data.table.h"
 #include <Rdefines.h>
 
+
+SEXP setnames(SEXP x, SEXP nam) {
+  if(TYPEOF(nam) != STRSXP) error("names need to be character typed");
+  if(INHERITS(x, char_datatable)) {
+    int n = TRUELENGTH(x), l = LENGTH(nam);
+    if(n < l) error("Invalid data.table (underallocated), use qDT(data) to make valid.");
+    SEXP newnam = PROTECT(allocVector(STRSXP, n)),
+      *pnn = STRING_PTR(newnam), *pn = STRING_PTR(nam);
+    for(int i = 0; i < l; ++i) pnn[i] = pn[i];
+    SETLENGTH(newnam, l);
+    SET_TRUELENGTH(newnam, n);
+    setAttrib(x, R_NamesSymbol, newnam);
+    setselfref(x);
+    UNPROTECT(1);
+  } else setAttrib(x, R_NamesSymbol, nam);
+  return x;
+}
+
 bool allNA(SEXP x, bool errorForBadType) {
   // less space and time than all(is.na(x)) at R level because that creates full size is.na(x) first before all()
   // whereas this allNA can often return early on testing the first value without reading the rest
