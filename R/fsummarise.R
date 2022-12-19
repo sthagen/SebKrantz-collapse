@@ -22,17 +22,6 @@ fFUN_smr_add_groups <- function(z) {
 # Also: quote(i(u)-b/p(z-u/log(a)))
 # Also: q/p
 
-# Old version...
-# othFUN_compute <- function(x) {
-#   if(length(x) == 2L) # No additional function arguments
-#     return(substitute(.copyMostAttributes_(unlist(lapply(gsplit(a, .g_), b), FALSE, FALSE), a),
-#                       list(a = x[[2L]], b = x[[1L]])))
-#   # With more arguments, things become more complex..
-#   lapply_call <- as.call(c(list(quote(lapply), substitute(gsplit(a, .g_), list(a = x[[2L]]))), as.list(x[-2L])))
-#   substitute(.copyMostAttributes_(unlist(a, FALSE, FALSE), b),
-#              list(a = lapply_call, b = x[[2L]]))
-# }
-
 # Note: Need unclass here because of t_list() in do_across(), which only works if also the interior of the list is a list!
 smr_funi_simple <- function(i, data, .data_, funs, aplvec, ce, ...) {
   # return(list(i = i, data = data, .data_ = .data_, funs = funs, aplvec = aplvec, ce = ce))
@@ -81,7 +70,7 @@ smr_funi_grouped <- function(i, data, .data_, funs, aplvec, ce, ...) {
 
 
 
-fsummarise <- function(.data, ..., keep.group_vars = TRUE) {
+fsummarise <- function(.data, ..., keep.group_vars = TRUE, .cols = NULL) {
   if(!is.list(.data)) stop(".data needs to be a list of equal length columns or a data.frame")
   e <- substitute(list(...))
   nam <- names(e)
@@ -95,17 +84,17 @@ fsummarise <- function(.data, ..., keep.group_vars = TRUE) {
     attr(.data, "groups") <- NULL
     ax <- attributes(.data)
     ax[["class"]] <- fsetdiff(cld, c("GRP_df", "grouped_df"))
-    .data[[".g_"]] <- g
-    .data[[".gsplit_"]] <- gsplit
+    .data[c(".g_", ".gsplit_")] <- list(g, gsplit)
     res <- vector("list", length(e))
     for(i in 2:length(e)) { # This is good and very fast
       ei <- e[[i]]
       if(nullnam || nam[i] == "") { # Across
-        if(ei[[1L]] != quote(across) && ei[[1L]] != quote(acr)) stop("expressions need to be named or start with across(), or its shorthand acr().")
-        ei[[1L]] <- quote(do_across)
-        ei$.eval_funi <- quote(smr_funi_grouped)
-        # return(eval(ei, list(do_across = do_across, smr_funi_grouped = smr_funi_grouped), pe))
-        res[[i]] <- eval(ei, list(do_across = do_across, smr_funi_grouped = smr_funi_grouped), pe)
+        if(ei[[1L]] == quote(across) || ei[[1L]] == quote(acr)) {
+          ei[[1L]] <- quote(do_across)
+          ei$.eval_funi <- quote(smr_funi_grouped)
+          # return(eval(ei, list(do_across = do_across, smr_funi_grouped = smr_funi_grouped), pe))
+          res[[i]] <- eval(ei, list(do_across = do_across, smr_funi_grouped = smr_funi_grouped), pe)
+        } else res[[i]] <- do_grouped_expr_list(ei, .data, g, pe, .cols, ax)
       } else { # Tagged vector expressions
         eif <- all_funs(ei)
         res[[i]] <- list(if(any(eif %in% .FAST_STAT_FUN_POLD))  # startsWith(eif, .FAST_STAT_FUN_POLD) Note: startsWith does not reliably capture expressions e.g. e <- quote(list(b = fmean(log(mpg)) + max(qsec))) does not work !!
@@ -118,11 +107,15 @@ fsummarise <- function(.data, ..., keep.group_vars = TRUE) {
     res <- unlist(res, FALSE, use.names = TRUE)
     # replicating groups if more rows per computation...
     if(!all_eq(lr <- vlengths(res, FALSE))) {
-      if(!keep.group_vars) stop("all computations need to result in vectors of equal length")
-      gi <- seq_along(g$group.vars)
-      ef <- lr[length(gi)+1L] / g[[1L]]
-      if(!all_eq(lr[-gi]) || ef %% 1 > 0) stop("all computations need to result in vectors of equal length")
-      res[gi] <- .Call(C_subsetDT, res[gi], rep(seq_len(g[[1L]]), each = ef), gi, FALSE) # Using C_subsetvector is not really faster... (1-2 microseconds gain)
+      # if(!keep.group_vars) stop("all computations need to result in vectors of equal length")
+      # gi <- seq_along(g$group.vars)
+      # ef <- lr[length(gi)+1L] / g[[1L]]
+      maxlr <- bmax(lr)
+      ef <- maxlr / g[[1L]]
+      # if(!all_eq(lr[-gi]) || ef %% 1 > 0) stop("all computations need to result in vectors of equal length")
+      gi <- whichv(lr, maxlr, invert = TRUE)
+      if(ef != as.integer(ef) || !all_eq(lr[gi])) stop("all computations need to result in vectors of length 1 or the maximum length of any expression")
+      res[gi] <- .Call(C_subsetDT, res, rep(seq_len(g[[1L]]), each = ef), gi, FALSE) # Using C_subsetvector is not really faster... (1-2 microseconds gain)
     }
   } else {
     # Without groups...
@@ -132,9 +125,10 @@ fsummarise <- function(.data, ..., keep.group_vars = TRUE) {
       for(i in 2:length(e)) {
         ei <- e[[i]]
         if(nullnam || nam[i] == "") {
-          if(ei[[1L]] != quote(across) && ei[[1L]] != quote(acr)) stop("expressions need to be named or start with across(), or its shorthand acr().")
-          ei[[1L]] <- quote(.do_across)
-          ei$.eval_funi <- quote(.smr_funi_simple)
+          if(ei[[1L]] == quote(across) || ei[[1L]] == quote(acr)) { # stop("expressions need to be named or start with across(), or its shorthand acr().")
+            ei[[1L]] <- quote(.do_across)
+            ei$.eval_funi <- quote(.smr_funi_simple)
+          }
           e[[i]] <- ei
         } else e[[i]] <- as.call(list(quote(list), ei))
       }
@@ -142,64 +136,17 @@ fsummarise <- function(.data, ..., keep.group_vars = TRUE) {
       res <- unlist(eval(e, c(.data, list(.do_across = do_across, .smr_funi_simple = smr_funi_simple)), pe), FALSE, use.names = TRUE)
     } else res <- eval(e, .data, pe)
     # return(res)
-    if(!all_eq(vlengths(res, FALSE))) stop("all computations need to result in vectors of equal length")
+    if(!all_eq(lr <- vlengths(res, FALSE))) {
+      maxlr <- bmax(lr)
+      gi <- whichv(lr, maxlr, invert = TRUE)
+      if(!allv(lr[gi], 1L)) stop("all computations need to result in vectors of length 1 or the maximum length of any expression")
+      res[gi] <- .Call(C_subsetDT, res, rep.int(1L, maxlr), gi, FALSE)
+    }
   }
-  ax[["names"]] <- names(res)
-  ax[["row.names"]] <- .set_row_names(length(res[[1L]]))
+  ax[c("names", "row.names")] <- list(names(res), .set_row_names(length(res[[1L]])))
   return(condalcSA(res, ax, any(cld == "data.table")))
 }
 
+fsummarize <- fsummarise
+
 smr <- fsummarise
-
-# sumr # -> yes, but above is more consistent with other shortcuts
-
-# Some speed improvement before gsplit:
-#
-# othFUN_compute <- function(x) {
-#   if(length(x) == 2L) # No additional function arguments
-#     return(substitute(copyMostAttrib(unlist(lapply(split(a, .g_f), b), FALSE, FALSE), a),
-#                       list(a = x[[2L]], b = x[[1L]])))
-#   # With more arguments, things become more complex..
-#   lapply_call <- as.call(c(list(quote(lapply), substitute(split(a, .g_f), list(a = x[[2L]]))), as.list(x[-2L])))
-#   substitute(copyMostAttrib(unlist(a, FALSE, FALSE), b),
-#              list(a = lapply_call, b = x[[2L]]))
-# }
-#
-# fsummarise <- function(.data, ..., keep.group_vars = TRUE) {
-#   if(!is.list(.data)) stop(".data needs to be a list of equal length columns or a data.frame")
-#   e <- substitute(list(...))
-#   cld <- oldClass(.data)
-#   dm <- c(list(.g_ = g), .data)
-#   ofl <- TRUE
-#   if(any(cld == "grouped_df")) {
-#     g <- GRP.grouped_df(.data, call = FALSE)
-#     ax <- attributes(fungroup(.data))
-#     # FUNs <- vapply(e[-1L], function(x) as.character(x[[1L]]), character(1L), USE.NAMES = FALSE)
-#     # if(any(FUNs %!in% .FAST_STAT_FUN_POLD)) ...
-#     for(i in seq_along(e)[-1L]) { # This is good and very fast
-#       ei <- e[[i]]
-#       if(any(startsWith(as.character(ei[[1L]]), .FAST_STAT_FUN_POLD))) { # could pass collapse::flast.default etc..
-#         e[[i]] <- fFUN_add_groups(ei)
-#       } else {
-#         if(ofl) {
-#           dm$.g_f <- as_factor_GRP(g)
-#           ofl <- FALSE
-#         }
-#         e[[i]] <- othFUN_compute(ei)
-#       }
-#     }
-#     res <- eval(e, dm, parent.frame())
-#     if(keep.group_vars) res <- c(g[["groups"]], res)
-#     ax[["names"]] <- names(res)
-#     ax[["row.names"]] <- .set_row_names(g[[1L]])
-#     return(condalcSA(res, ax, any(cld == "data.table")))
-#   }
-#   ax <- attributes(.data)
-#   res <- eval(e, .data, parent.frame())
-#   ax[["names"]] <- names(res)
-#   ax[["row.names"]] <- 1L
-#   return(condalcSA(res, ax, any(cld == "data.table")))
-# }
-
-
-
