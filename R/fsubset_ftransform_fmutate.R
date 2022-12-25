@@ -39,7 +39,7 @@ ss <- function(x, i, j, check = TRUE) {
   }
   if(!is.integer(i)) {
     if(is.numeric(i)) i <- as.integer(i) else if(is.logical(i)) {
-      nr <- fnrow2(x)
+      nr <- fnrow(x)
       if(check && length(i) != nr) stop("i needs to be integer or logical(nrow(x))") # which(r & !is.na(r)) not needed !
       i <- which(i)
       if(length(i) == nr) return(if(mj) x else .Call(C_subsetCols, x, j, TRUE))
@@ -74,7 +74,7 @@ fsubset.data.frame <- function(.x, subset, ...) {
   }
   checkrows <- TRUE
   if(is.logical(r)) {
-    nr <- fnrow2(.x)
+    nr <- fnrow(.x)
     if(length(r) != nr) stop("subset needs to be an expression evaluating to logical(nrow(.x)) or integer") # which(r & !is.na(r)) not needed !
     r <- which(r)
     if(length(r) == nr) if(missing(...)) return(.x) else return(.Call(C_subsetCols, .x, vars, TRUE))
@@ -130,7 +130,7 @@ fsubset.pdata.frame <- function(.x, subset, ..., drop.index.levels = "id") {
   }
   checkrows <- TRUE
   if(is.logical(r)) {
-    nr <- fnrow2(.x)
+    nr <- fnrow(.x)
     if(length(r) != nr) stop("subset needs to be an expression evaluating to logical(nrow(.x)) or integer") # which(r & !is.na(r)) not needed !
     r <- which(r)
     if(length(r) == nr) if(missing(...)) return(.x) else return(.Call(C_subsetCols, .x, vars, TRUE))
@@ -278,7 +278,7 @@ fcompute_core <- function(.data, e, keep = NULL) {
         e <- c(e, .subset(.data, attr(.data, "sf_column")))
   ax[["names"]] <- names(e)
   le <- vlengths(e, FALSE)
-  nr <- fnrow2(.data)
+  nr <- fnrow(.data)
   rl <- le == nr
   if(all(rl)) return(condalcSA(e, ax, inherits(.data, "data.table"))) # All computed vectors have the right length
   if(any(1L < le & !rl)) stop("Lengths of replacements must be equal to nrow(.data) or 1")
@@ -556,6 +556,7 @@ dots_apply_grouped <- function(d, g, f, dots) {
     asl <- lapply(dots[ln], gsplit, g)
     if(length(dots) > length(ln)) {
       mord <- dots[-ln]
+      if(is.null(names(mord)) && is.null(names(asl))) warning("If some arguments have the same length as the data (vectors) while others have length 1 (scalars), please ensure that at least one of the two have keywords e.g. argname = value. This is because the latter are passed to the 'MoreArgs' argument of .mapply, and thus the order in which arguments are passed to the function might be different from your top-level call. In particular, .mapply will first pass the vector valued arguments followed by the scalar valued ones.")
       FUN <- function(x) .mapply(f, c(list(gsplit(x, g)), asl), mord) # do.call(mapply, c(list(f, gsplit(x, g), SIMPLIFY = FALSE, USE.NAMES = FALSE, MoreArgs = mord), asl))
     } else FUN <- function(x) .mapply(f, c(list(gsplit(x, g)), asl), NULL) # do.call(mapply, c(list(f, gsplit(x, g), SIMPLIFY = FALSE, USE.NAMES = FALSE), asl))
     return(lapply(d, function(y) copyMostAttributes(unlist(FUN(y), FALSE, FALSE), y)))
@@ -565,13 +566,17 @@ dots_apply_grouped <- function(d, g, f, dots) {
 }
 
 dots_apply_grouped_bulk <- function(d, g, f, dots) {
-  n <- fnrow2(d)
+  n <- fnrow(d)
   dsp <- rsplit.data.frame(d, g, simplify = FALSE, flatten = TRUE, use.names = FALSE)
   if(is.null(dots)) return(lapply(dsp, f))
   # Arguments withs ame length as data
   if(length(ln <- whichv(vlengths(dots, FALSE), n))) {
     asl <- lapply(dots[ln], gsplit, g)
-    return(.mapply(f, c(list(dsp), asl), if(length(dots) > length(ln)) dots[-ln] else NULL))
+    if(length(dots) > length(ln)) {
+      mord <- dots[-ln]
+      if(is.null(names(mord)) && is.null(names(asl))) warning("If some arguments have the same length as the data (vectors) while others have length 1 (scalars), please ensure that at least one of the two have keywords e.g. argname = value. This is because the latter are passed to the 'MoreArgs' argument of .mapply, and thus the order in which arguments are passed to the function might be different from your top-level call. In particular, .mapply will first pass the vector valued arguments followed by the scalar valued ones.")
+    } else mord <- NULL
+    return(.mapply(f, c(list(dsp), asl), mord))
   }
   # No arguments to be split
   do.call(lapply, c(list(dsp, f), dots))
