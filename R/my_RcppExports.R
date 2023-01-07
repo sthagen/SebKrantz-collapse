@@ -89,17 +89,16 @@ flagleadlCpp <- function(x, n = 1L, fill = NULL, ng = 0L, g = 0L, t = NULL, name
     .Call(Cpp_flagleadl, x, n, fill, ng, g, t, names)
 }
 
-fnthCpp <- function(x, n = 0.5, ng = 0L, g = 0L, gs = NULL, w = NULL, narm = TRUE, ret = 1L, nthreads = 1L) {
-  .Call(Cpp_fnth, x, n, ng, g, gs, w, narm, ret, nthreads)
-}
 
-fnthmCpp <- function(x, n = 0.5, ng = 0L, g = 0L, gs = NULL, w = NULL, narm = TRUE, drop = TRUE, ret = 1L, nthreads = 1L) {
-  .Call(Cpp_fnthm, x, n, ng, g, gs, w, narm, drop, ret, nthreads)
-}
+fquantile <- function(x, probs = c(0, 0.25, 0.5, 0.75, 1), w = NULL,
+                      o = if(length(probs) > log10(length(x))) radixorder(x) else NULL,
+                      na.rm = TRUE, type = 7L, names = TRUE,
+                      check.o = is.null(attr(o, "sorted")))
+  .Call(C_fquantile, x, probs, w, o, na.rm, type, names, check.o)
 
-fnthlCpp <- function(x, n = 0.5, ng = 0L, g = 0L, gs = NULL, w = NULL, narm = TRUE, drop = TRUE, ret = 1L, nthreads = 1L) {
-  .Call(Cpp_fnthl, x, n, ng, g, gs, w, narm, drop, ret, nthreads)
-}
+.quantile <- function(x, probs = c(0, 0.25, 0.5, 0.75, 1), w = NULL,
+                      o = NULL, na.rm = TRUE, type = 7L, names = FALSE, check.o = FALSE)
+  .Call(C_fquantile, x, probs, w, o, na.rm, type, names, check.o)
 
 fscaleCpp <- function(x, ng = 0L, g = 0L, w = NULL, narm = TRUE, set_mean = 0, set_sd = 1) {
     .Call(Cpp_fscale, x, ng, g, w, narm, set_mean, set_sd)
