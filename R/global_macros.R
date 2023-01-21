@@ -1,25 +1,32 @@
 
-# .NA_RM <- TRUE
+# Global Options
+set_collapse <- function(...) {
+  opts <- if(...length() == 1L && is.list(..1)) ..1 else list(...)
+  op_old <- as.list(.op)
+  nam <- names(opts)
+  if(any(nam %!in% c("nthreads", "na.rm"))) stop("Currently only supports options 'nthreads' and 'na.rm'")
+  if(length(opts$nthreads)) {
+    nthreads <- as.integer(opts$nthreads)
+    if(is.na(nthreads) || nthreads <= 0L) stop("nthreads needs to be a positive integer")
+    .op$nthreads <- nthreads
+  }
+  if(length(opts$na.rm)) {
+    na.rm <- as.logical(opts$na.rm)
+    if(is.na(na.rm)) stop("na.rm needs to be TRUE or FALSE")
+    .op$na.rm <- na.rm
+  }
+  invisible(op_old)
+}
 
-# global macros
+get_collapse <- function(opts = NULL) if(is.null(opts)) as.list(.op) else if(length(opts) == 1L) .op[[opts]] else `names<-`(lapply(opts, function(x) .op[[x]]), opts)
 
-# .COLLAPSE_NTHREADS <- 1L
-#
-# set_collapse <- function(...) {
-#   opts <- list(...)
-#   if(length(opts) > 1L || is.null(opts$nthreads)) stop("Can currently only set option 'nthreads'")
-#   nthreads <- as.integer(opts$nthreads)
-#   if(is.na(nthreads) || nthreads <= 0L) stop("nthreads needs to be a positive integer")
-#   assign(".COLLAPSE_NTHREADS", nthreads, pos = getNamespace("collapse")) # not allowed!
-# }
+# Global Macros
 
-# TODO: need to create global option to change value of nthreads. Or, alternatively see of calls to .Options$collapse_nthreads are allowed
-# Could also do for na.rm default...
 
 .COLLAPSE_TOPICS <- c("collapse-documentation","fast-statistical-functions","fast-grouping-ordering",
                       "fast-data-manipulation","quick-conversion","advanced-aggregation",
                       "data-transformations","time-series-panel-series","list-processing",
-                      "summary-statistics","recode-replace","efficient-programming","small-helpers")
+                      "summary-statistics","recode-replace","efficient-programming","small-helpers","collapse-options")
 
 # .COLLAPSE_TOPICS <- c("collapse-documentation","A1-fast-statistical-functions","A2-fast-grouping-ordering",
 #                       "A3-fast-data-manipulation","A4-quick-conversion","A5-advanced-aggregation",
@@ -33,41 +40,41 @@
 # Get updated .COLLAPSE_ALL:
 # ".default$|.matrix$|.data.frame$"
 # v <- grep("\\.|N|HD", objects("package:collapse"), invert = TRUE, value = TRUE) # getNamespaceExports("collapse")
-# grep("N", objects("package:collapse"), value = TRUE)
+# # grep("N", objects("package:collapse"), value = TRUE)
 # v <- c(v, "GRPN", "GRPid", "HDB", "HDW", "allNA", "whichNA", "replace_NA")
+# TODO: also remove Date_vars...
 # cat(v, sep = '", "')
 
 # all package objects..
 # allobj <- ls(getNamespace("collapse"), all.names=TRUE)
 
-
-.COLLAPSE_ALL <- sort(unique(c("%-=%", "%!=%", "%!in%", "%*=%", "%/=%", "%+=%", "%=%", "%==%", "%c-%", "%c*%", "%c/%",
-                               "%c+%", "%cr%", "%r-%", "%r*%", "%r/%", "%r+%", "%rr%", "add_stub", "add_vars", "add_vars<-",
-                               "all_funs", "all_identical", "all_obj_equal", "alloc", "allv", "anyv", "as_character_factor",
-                               "as_factor_GRP", "as_factor_qG", "as_numeric_factor", "atomic_elem", "atomic_elem<-", "av",
-                               "av<-", "B", "BY", "cat_vars", "cat_vars<-", "char_vars", "char_vars<-", "cinv", "ckmatch",
-                               "collap", "collapg", "collapv", "colorder", "colorderv", "copyAttrib", "copyMostAttrib",
-                               "copyv", "D", "dapply", "date_vars", "Date_vars", "date_vars<-", "Date_vars<-", "descr",
-                               "Dlog", "F", "fact_vars", "fact_vars<-", "fbetween", "fcompute", "fcomputev", "fcount",
-                               "fcountv", "fcumsum", "fdiff", "fdim", "fdroplevels", "ffirst", "fFtest", "fgroup_by",
-                               "fgroup_vars", "fgrowth", "fhdbetween", "fhdwithin", "findex", "findex_by", "finteraction",
-                               "flag", "flast", "flm", "fmax", "fmean", "fmedian", "fmin", "fmode", "fmutate", "fncol",
-                               "fndistinct", "fnlevels", "fnobs", "fnrow", "fnth", "fnunique", "fprod", "frange", "fdist",
-                               "frename", "fscale", "fsd", "fselect", "fselect<-", "fsubset", "fsum", "fsummarise", "fsummarize",
-                               "ftransform", "ftransform<-", "ftransformv", "fungroup", "funique", "fvar", "fwithin", "G",
-                               "gby", "get_elem", "get_vars", "get_vars<-", "GGDC10S", "greorder", "group", "groupid", "GRP",
-                               "GRPnames", "gsplit", "gv", "gv<-", "gvr", "gvr<-", "has_elem", "iby", "irreg_elem", "is_categorical",
-                               "is_date", "is_GRP", "is_irregular", "is_qG", "is_unlistable", "itn", "ix", "L", "ldepth", "list_elem",
-                               "list_elem<-", "logi_vars", "logi_vars<-", "massign", "mctl", "missing_cases", "mrtl", "mtt", "na_insert",
-                               "na_omit", "na_rm", "namlab", "num_vars", "num_vars<-", "nv", "nv<-", "pad", "psacf", "psccf", "psmat",
-                               "pspacf", "pwcor", "pwcov", "pwnobs", "qDF", "qDT", "qF", "qG", "qM", "qsu", "qtab", "qtable", "qTBL",
-                               "radixorder", "radixorderv", "rapply2d", "recode_char", "recode_num", "reg_elem", "reindex", "relabel",
-                               "replace_Inf", "replace_outliers", "rm_stub", "rnm", "roworder", "roworderv", "rsplit", "sbt", "seq_col",
-                               "seq_row", "seqid", "setattrib", "setAttrib", "setColnames", "setDimnames", "setLabels", "setop",
-                               "setrelabel", "setrename", "setRownames", "settfm", "settfmv", "setTRA", "settransform", "settransformv",
-                               "setv", "slt", "slt<-", "smr", "ss", "STD", "t_list", "tfm", "tfm<-", "tfmv", "timeid", "to_plm", "TRA",
-                               "unattrib", "unindex", "unlist2d", "varying", "vclasses", "vgcd", "vlabels", "vlabels<-", "vlengths",
-                               "vtypes", "W", "whichv", "wlddev", "GRPN", "GRPid", "HDB", "HDW", "allNA", "whichNA", "replace_NA")))
+.COLLAPSE_ALL <- sort(unique(c("%-=%", "%!=%", "%!in%", "%*=%", "%/=%", "%+=%", "%=%", "%==%", "%c-%", "%c*%",
+                               "%c/%", "%c+%", "%cr%", "%r-%", "%r*%", "%r/%", "%r+%", "%rr%", "add_stub",
+                               "add_vars", "add_vars<-", "all_funs", "all_identical", "all_obj_equal", "alloc",
+                               "allv", "anyv", "as_character_factor", "as_factor_GRP", "as_factor_qG", "as_numeric_factor",
+                               "atomic_elem", "atomic_elem<-", "av", "av<-", "B", "BY", "cat_vars", "cat_vars<-", "char_vars",
+                               "char_vars<-", "cinv", "ckmatch", "collap", "collapg", "collapv", "colorder", "colorderv",
+                               "copyAttrib", "copyMostAttrib", "copyv", "D", "dapply", "date_vars", "date_vars<-",
+                               "descr", "Dlog", "fact_vars", "fact_vars<-", "fbetween", "fcompute", "fcomputev",
+                               "fcount", "fcountv", "fcumsum", "fdiff", "fdim", "fdist", "fdroplevels", "ffirst", "fFtest",
+                               "fgroup_by", "fgroup_vars", "fgrowth", "fhdbetween", "fhdwithin", "findex", "findex_by",
+                               "finteraction", "flag", "flast", "flm", "fmax", "fmean", "fmedian", "fmin", "fmode", "fmutate",
+                               "fncol", "fndistinct", "fnlevels", "fnobs", "fnrow", "fnth", "fnunique", "fprod", "fquantile",
+                               "frange", "frename", "fscale", "fsd", "fselect", "fselect<-", "fsubset", "fsum", "fsummarise",
+                               "fsummarize", "ftransform", "ftransform<-", "ftransformv", "fungroup", "funique", "fvar",
+                               "fwithin", "G", "gby", "get_elem", "get_vars", "get_vars<-", "GGDC10S", "greorder", "group",
+                               "groupid", "GRP", "GRPid", "GRPnames", "gsplit", "gv", "gv<-", "gvr", "gvr<-", "has_elem", "iby",
+                               "irreg_elem", "is_categorical", "is_date", "is_GRP", "is_irregular", "is_qG", "is_unlistable", "itn",
+                               "ix", "L", "ldepth", "list_elem", "list_elem<-", "logi_vars", "logi_vars<-", "massign", "mctl", "missing_cases",
+                               "mrtl", "mtt", "na_insert", "na_omit", "na_rm", "namlab", "num_vars", "num_vars<-", "nv", "nv<-", "pad", "psacf",
+                               "psccf", "psmat", "pspacf", "pwcor", "pwcov", "pwnobs", "qDF", "qDT", "qF", "qG", "qM", "qsu", "qtab", "qtable",
+                               "qTBL", "radixorder", "radixorderv", "rapply2d", "recode_char", "recode_num", "reg_elem", "reindex", "relabel",
+                               "replace_Inf", "replace_outliers", "rm_stub", "rnm", "roworder", "roworderv", "rsplit", "sbt", "seq_col", "seq_row",
+                               "seqid", "setattrib", "setAttrib", "setColnames", "setDimnames", "setLabels", "setop", "setrelabel", "setrename",
+                               "setRownames", "settfm", "settfmv", "setTRA", "settransform", "settransformv", "setv", "slt", "slt<-", "smr", "ss",
+                               "STD", "t_list", "tfm", "tfm<-", "tfmv", "timeid", "to_plm", "TRA", "unattrib", "unindex", "unlist2d", "varying",
+                               "vclasses", "vgcd", "vlabels", "vlabels<-", "vlengths", "vtypes", "W", "whichv", "wlddev", "GRPN", "GRPid", "HDB",
+                               "HDW", "allNA", "whichNA", "replace_NA")))
 
 .COLLAPSE_GENERIC   <-   sort(unique(c("B","BY","D","Dlog","F","fsubset","fbetween","fdiff","ffirst","fgrowth","fhdbetween",
                            "fhdwithin","flag","flast","fmax","fmean","fmedian","fnth","fmin","fmode","varying",

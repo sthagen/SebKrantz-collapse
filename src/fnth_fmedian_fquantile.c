@@ -178,7 +178,7 @@ if(probs[0] == 0.0 || probs[np-1] == 1.0) {                                   \
 */
 #define FQUANTILE_CORE(QFUN)                                                  \
   double h, Q;                                                                \
-  int ih;                                                                     \
+  int ih = 0; /* To avoid -Wmaybe-uninitialized */                            \
   for(int i = 0, offset = 0; i < np; ++i) {                                   \
     Q = probs[i];                                                             \
     if(Q > 0.0 && Q < 1.0) {                                                  \
@@ -460,7 +460,7 @@ SEXP fquantileC(SEXP x, SEXP Rprobs, SEXP w, SEXP o, SEXP Rnarm, SEXP Rtype, SEX
 double dquickselect(double *x, const int n, const int ret, const double Q) {
   if(n == 0) return NA_REAL;
   unsigned int elem;
-  double a, b, h;
+  double a, b, h = 0.0; /* To avoid -Wmaybe-uninitialized */
   RETQSWITCH(n);
   elem = h; h -= elem; // need to subtract elem
   QUICKSELECT(dswap);
@@ -475,7 +475,7 @@ double iquickselect(int *x, const int n, const int ret, const double Q) {
   if(n == 0) return NA_REAL;
   unsigned int elem;
   int a, b;
-  double h;
+  double h = 0.0; /* To avoid -Wmaybe-uninitialized */
   RETQSWITCH(n);
   elem = h; h -= elem; // need to subtract elem
   QUICKSELECT(iswap);
@@ -491,7 +491,7 @@ double iquickselect(int *x, const int n, const int ret, const double Q) {
 
 // Expects pw and po to be consistent
 double w_compute_h(const double *pw, const int *po, const int l, const int sorted, const int ret, const double Q) {
-  double sumw = 0.0, mu, h;
+  double sumw = 0.0, mu, h = 0.0; /* To avoid -Wmaybe-uninitialized */
   int nw0 = 0;
   if(sorted) {
     for(int i = 0; i != l; ++i) {
@@ -583,7 +583,7 @@ if(ret < 3) { /* lower (2), or average (1) element*/                         \
 // Expects pointer px to be decremented by 1
 #undef NTH_ORDVEC
 #define NTH_ORDVEC                                                         \
-double a, b, h;                                                            \
+double a, b, h = 0.0; /* To avoid -Wmaybe-uninitialized */                 \
 RETQSWITCH(l);                                                             \
 int ih = h; a = px[po[ih]]; h -= ih;                                       \
 if((ret < 4 && (ret != 1 || l%2 == 1)) || ih == l-1 || h <= 0.0) return a; \
@@ -1200,10 +1200,6 @@ SEXP w_nth_g_qsort_impl(SEXP x, double *pw, int ng, int *pgs, int *po, int *pst,
 
 // Functions for Export --------------------------------------------------------
 
-// TODO: Single thread optimization: re-use array for quickselect?? should be quite easy... just check if nthreads = 1,
-// otherwise assign pointer...
-// Also for multiple columns with weights if na.rm = FALSE, can compute h / sumw and supply repeatedly for each column
-
 int Rties2int(SEXP x) {
   int tx = TYPEOF(x);
   if(tx == INTSXP || tx == REALSXP || tx == LGLSXP) {
@@ -1332,10 +1328,9 @@ SEXP fnthC(SEXP x, SEXP p, SEXP g, SEXP w, SEXP Rnarm, SEXP Rret, SEXP Rnthreads
     }
   }
 
-  SEXP res; // result
-
   // If no groups, return using suitable functions
   if(nullg) {
+    SEXP res; // result, could be put outside if() to avoid repetition below, but this seems to confuse rchk
     if(nullw) res = nth_ord_impl(x, pxo, narm, ret, Q);
     else res = w_nth_ord_impl(x, pxo, pw, narm, ret, Q, DBL_MIN);
     UNPROTECT(nprotect);
@@ -1378,6 +1373,7 @@ SEXP fnthC(SEXP x, SEXP p, SEXP g, SEXP w, SEXP Rnarm, SEXP Rret, SEXP Rnthreads
   }
    */
 
+  SEXP res; // result
   if(nullw && nullo) res = nthreads <= 1 ? nth_g_impl_noalloc(x, ng, pgs, po, pst, sorted, narm, ret, Q, R_alloc(maxgrpn, TYPEOF(x) == REALSXP ? sizeof(double) : sizeof(int))) :
                                            nth_g_impl(x, ng, pgs, po, pst, sorted, narm, ret, Q, nthreads);
   else if(nullw) res = nth_g_ord_impl(x, ng, pgs, pxo-1, pst, narm, ret, Q, nthreads);
@@ -1422,6 +1418,7 @@ if(nullw) {                                                    \
   }
    */
 
+// TODO: Pre-compute weights at the group-level if narm = FALSE for list and matrix method
 
 // Function for lists / data frames
 SEXP fnthlC(SEXP x, SEXP p, SEXP g, SEXP w, SEXP Rnarm, SEXP Rdrop, SEXP Rret, SEXP Rnthreads) {

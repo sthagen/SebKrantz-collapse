@@ -621,8 +621,16 @@ SEXP w_mode_string(const SEXP *restrict px, const double *restrict pw, const int
 
 // Implementations for R vectors -----------------------------------------------
 
-// Splitting this up to increase thread safety
+// https://github.com/wch/r-source/blob/trunk/src/include/Rinlinedfuns.h
+inline SEXP my_ScalarLogical(int x)
+{
+  SEXP ans = allocVector(LGLSXP, 1);
+  // SET_SCALAR_LVAL(ans, x); // Not part of the API
+  LOGICAL(ans)[0] = x;
+  return ans;
+}
 
+// Splitting this up to increase thread safety
 SEXP mode_impl_plain(SEXP x, int narm, int ret) {
   int l = length(x);
   if(l <= 1) return x;
@@ -631,7 +639,7 @@ SEXP mode_impl_plain(SEXP x, int narm, int ret) {
     case REALSXP: return ScalarReal(mode_double(REAL(x), &l, l, 1, narm, ret));
     case INTSXP:  return ScalarInteger(isFactor(x) ? mode_fct_logi(INTEGER(x), &l, l, nlevels(x), 1, narm, ret) :
                                     mode_int(INTEGER(x), &l, l, 1, narm, ret));
-    case LGLSXP: return duplicate(ScalarLogical(mode_fct_logi(LOGICAL(x), &l, l, 1, 1, narm, ret)));
+    case LGLSXP: return my_ScalarLogical(mode_fct_logi(LOGICAL(x), &l, l, 1, 1, narm, ret));
     case STRSXP: return ScalarString(mode_string(STRING_PTR(x), &l, l, 1, narm, ret));
     default: error("Not Supported SEXP Type: '%s'", type2char(TYPEOF(x)));
   }
@@ -653,7 +661,7 @@ SEXP w_mode_impl_plain(SEXP x, double *pw, int narm, int ret) {
     case REALSXP: return ScalarReal(w_mode_double(REAL(x), pw, &l, l, 1, narm, ret));
     case INTSXP:  return ScalarInteger(isFactor(x) ? w_mode_fct_logi(INTEGER(x), pw, &l, l, nlevels(x), 1, narm, ret) :
                                     w_mode_int(INTEGER(x), pw, &l, l, 1, narm, ret));
-    case LGLSXP:  return duplicate(ScalarLogical(w_mode_fct_logi(LOGICAL(x), pw, &l, l, 1, 1, narm, ret)));
+    case LGLSXP:  return my_ScalarLogical(w_mode_fct_logi(LOGICAL(x), pw, &l, l, 1, 1, narm, ret));
     case STRSXP:  return ScalarString(w_mode_string(STRING_PTR(x), pw, &l, l, 1, narm, ret));
     default: error("Not Supported SEXP Type: '%s'", type2char(TYPEOF(x)));
   }
