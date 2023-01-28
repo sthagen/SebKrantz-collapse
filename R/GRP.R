@@ -431,7 +431,7 @@ print.GRP_df <- function(x, ...) {
     # Groups: # if(any(g[[6L]])) "ordered groups" else "unordered groups", -> ordered 99% of times...
     cat("\nGrouped by: ", paste(g[[5L]], collapse = ", "), stats, "\n")
     if(inherits(x, "pdata.frame"))
-      message("\nNote: 'pdata.frame' methods for flag, fdiff, fgrowth, fcumsum, fbetween, fwithin, fscale and varying\n      take precedence over the 'grouped_df' methods for these functions.")
+      message("\nNote: 'pdata.frame' methods for flag, fdiff, fgrowth, fcumsum, fbetween, fwithin, fscale, qsu and varying\n      take precedence over the 'grouped_df' methods for these functions.")
   }
 }
 
@@ -845,6 +845,20 @@ funique.pdata.frame <- function(x, cols = NULL, sort = FALSE, method = "auto", d
 fnunique <- function(x) {
   if(is.atomic(x) && !is.complex(x)) .Call(C_fndistinct, x, NULL, FALSE, 1L) else
     attr(.Call(C_group, x, FALSE, FALSE), "N.groups")
+}
+
+fduplicated <- function(x, all = FALSE) {
+  if(all) {
+    g <- .Call(C_group, x, FALSE, FALSE)
+    ng <- attr(g, "N.groups")
+    if(ng == length(g)) return(.Call(C_alloc, FALSE, length(g)))
+    gs <- .Call(C_fwtabulate, g, NULL, ng, FALSE)
+    return(.Call(C_subsetVector, gs != 1L, g, FALSE))
+  }
+  g <- .Call(C_group, x, TRUE, FALSE)
+  starts <- attr(g, "starts")
+  if(length(starts) == length(g)) return(.Call(C_alloc, FALSE, length(g)))
+  .Call(C_setcopyv, .Call(C_alloc, TRUE, length(g)), starts, FALSE, FALSE, TRUE, TRUE)
 }
 
 fdroplevels <- function(x, ...) UseMethod("fdroplevels")

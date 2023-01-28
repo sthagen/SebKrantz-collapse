@@ -10,8 +10,8 @@
   .collapse_env <- new.env()
   assign(".collapse_env", .collapse_env, envir = clpns)
   .op <- new.env()
-  .op$nthreads <- 1L
-  .op$na.rm <- TRUE
+  .op$nthreads <- if(is.null(getOption("collapse_nthreads"))) 1L else as.integer(getOption("collapse_nthreads"))
+  .op$na.rm <- if(is.null(getOption("collapse_na.rm"))) TRUE else as.logical(getOption("collapse_na.rm"))
   assign(".op", .op, envir = clpns)
 
   mask <- getOption("collapse_mask")
@@ -38,7 +38,7 @@
     mask_all <- any(mask == "all")
     if(mask_all) mask <- c("helper", "manip", "fast-fun", if(length(mask) > 1L) mask[mask != "all"] else NULL)
     manipfun <- c("fsubset", "ftransform", "ftransform<-", "ftransformv", "fcompute", "fcomputev", "fselect", "fselect<-", "fgroup_by", "fgroup_vars", "fungroup", "fsummarise", "fsummarize", "fmutate", "frename", "findex_by", "findex")
-    helperfun <- c("fdroplevels", "finteraction", "fnlevels", "funique", "fnunique", "fcount", "fcountv", "fquantile", "frange", "fdist", "fnrow", "fncol") # , "fdim": Problem of infinite recursion...
+    helperfun <- c("fdroplevels", "finteraction", "fnlevels", "funique", "fnunique", "fduplicated", "fcount", "fcountv", "fquantile", "frange", "fdist", "fnrow", "fncol") # , "fdim": Problem of infinite recursion...
     if(any(mask == "helper")) mask <- unique.default(c(helperfun, mask[mask != "helper"]))
     if(any(mask == "manip")) mask <- unique.default(c(manipfun, mask[mask != "manip"]))
     if(any(mask == "fast-fun")) {
