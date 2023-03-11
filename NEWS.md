@@ -1,3 +1,11 @@
+# collapse 1.9.3.9000
+
+* Improvements in `get_elem()/has_elem()`: Option `invert = TRUE` is implemented in a more robust way, and a function passed to `get_elem()/has_elem()` is now applied to all elements in the list, including elements that are themselves list-like. This enables the use of `inherits` to find list-like objects inside a broader list-structure e.g. `get_elem(l, inherits, what = "lm")` fetches all linear model objects inside `l`. 
+
+* Fixed a small bug in `descr()` introduced in v1.9.0, producing an error if a data frame contained no numeric columns - because an internal function was not defined in that case. 
+
+* `fmean()` and `fsum()` with `na.rm = FALSE, nthreads = 1` and `g = NULL` now utilize Single Instruction Multiple Data (SIMD) vectorization by default (if OpenMP is enabled), enabling extreme aggregation speeds. 
+
 # collapse 1.9.3
 
 * Added functions `fduplicated()` and `any_duplicated()`, for vectors and lists / data frames. Thanks @NicChr (#373)
