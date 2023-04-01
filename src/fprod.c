@@ -218,14 +218,16 @@ SEXP fprodlC(SEXP x, SEXP Rng, SEXP g, SEXP w, SEXP Rnarm, SEXP Rdrop) {
   int l = length(x), ng = asInteger(Rng);
   if(l < 1) return x; // needed ??
   if(ng == 0 && asLogical(Rdrop)) {
-    SEXP out = PROTECT(allocVector(REALSXP, l)), *px = SEXPPTR(x);
+    SEXP out = PROTECT(allocVector(REALSXP, l));
+    const SEXP *px = SEXPPTR_RO(x);
     double *pout = REAL(out);
     for(int j = 0; j != l; ++j) pout[j] = REAL(fprodC(px[j], Rng, g, w, Rnarm))[0];
     setAttrib(out, R_NamesSymbol, getAttrib(x, R_NamesSymbol));
     UNPROTECT(1);
     return out;
   }
-  SEXP out = PROTECT(allocVector(VECSXP, l)), *pout = SEXPPTR(out), *px = SEXPPTR(x);
+  SEXP out = PROTECT(allocVector(VECSXP, l)), *pout = SEXPPTR(out);
+  const SEXP *px = SEXPPTR_RO(x);
   for(int j = 0; j != l; ++j) pout[j] = fprodC(px[j], Rng, g, w, Rnarm);
   // if(ng == 0) for(int j = 0; j != l; ++j) copyMostAttrib(px[j], pout[j]);
   DFcopyAttr(out, x, ng);

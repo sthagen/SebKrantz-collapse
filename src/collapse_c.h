@@ -1,7 +1,20 @@
+#ifdef _OPENMP
+  #include <omp.h>
+  #define OMP_NUM_PROCS omp_get_num_procs()
+  #define OMP_THREAD_LIMIT omp_get_thread_limit()
+  #define OMP_MAX_THREADS omp_get_max_threads()
+#else
+  #define OMP_NUM_PROCS 1
+  #define OMP_THREAD_LIMIT 1
+  #define OMP_MAX_THREADS 1
+#endif
+
 #include <R.h>
 #include <Rinternals.h>
 
 #define SEXPPTR(x) ((SEXP *)DATAPTR(x))  // to avoid overhead of looped VECTOR_ELT
+#define SEXPPTR_RO(x) ((const SEXP *)DATAPTR_RO(x))  // to avoid overhead of looped VECTOR_ELT
+
 #define NISNAN(x) ((x) == (x))  // opposite of ISNAN for doubles
 // Faster than Rinternals version (which uses math library version)
 #undef ISNAN
