@@ -60,8 +60,16 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="1.9.5" id="collapse-195">collapse 1.9.5<a class="anchor" aria-label="anchor" href="#collapse-195"></a></h2>
-<ul><li>Using <code>DATAPTR_RO</code> to point to R lists because of the use of <code>ALTLISTS</code> R-devel.</li>
+<h2 class="page-header" data-toc-text="1.9.5.9000" id="collapse-1959000">collapse 1.9.5.9000<a class="anchor" aria-label="anchor" href="#collapse-1959000"></a></h2>
+<ul><li><p><code><a href="../reference/descr.html">print.descr()</a></code> with groups and option <code>perc = TRUE</code> (the default) also shows percentages of the group frequencies for each variable.</p></li>
+<li><p><code>funique(mtcars[NULL, ], sort = TRUE)</code> gave an error (for data frame with zero rows). Thanks <a href="https://github.com/NicChr" class="external-link">@NicChr</a> (<a href="https://github.com/SebKrantz/collapse/issues/406" class="external-link">#406</a>).</p></li>
+<li><p>Added SIMD vectorization for <code><a href="../reference/fsubset.html">fsubset()</a></code>.</p></li>
+<li><p><code><a href="../reference/efficient-programming.html">vlengths()</a></code> now also works for strings, and is hence a much faster version of both <code><a href="https://rdrr.io/r/base/lengths.html" class="external-link">lengths()</a></code> and <code><a href="https://rdrr.io/r/base/nchar.html" class="external-link">nchar()</a></code>. Also for atomic vectors the behavior is like <code><a href="https://rdrr.io/r/base/lengths.html" class="external-link">lengths()</a></code>, e.g. <code>vlengths(rnorm(10))</code> gives <code>rep(1L, 10)</code>.</p></li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.9.5" id="collapse-195">collapse 1.9.5<small>2023-04-07</small><a class="anchor" aria-label="anchor" href="#collapse-195"></a></h2>
+<ul><li><p>Using <code>DATAPTR_RO</code> to point to R lists because of the use of <code>ALTLISTS</code> on R-devel.</p></li>
+<li><p>Replacing <code>!=</code> loop controls for SIMD loops with <code>&lt;</code> to ensure compatibility on all platforms. Thanks <a href="https://github.com/albertus82" class="external-link">@albertus82</a> (<a href="https://github.com/SebKrantz/collapse/issues/399" class="external-link">#399</a>).</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.9.4" id="collapse-194">collapse 1.9.4<small>2023-03-31</small><a class="anchor" aria-label="anchor" href="#collapse-194"></a></h2>

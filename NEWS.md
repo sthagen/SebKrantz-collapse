@@ -1,6 +1,18 @@
+# collapse 1.9.5.9000
+
+* `print.descr()` with groups and option `perc = TRUE` (the default) also shows percentages of the group frequencies for each variable. 
+
+* `funique(mtcars[NULL, ], sort = TRUE)` gave an error (for data frame with zero rows). Thanks @NicChr (#406).
+
+* Added SIMD vectorization for `fsubset()`. 
+
+* `vlengths()` now also works for strings, and is hence a much faster version of both `lengths()` and `nchar()`. Also for atomic vectors the behavior is like `lengths()`, e.g. `vlengths(rnorm(10))` gives `rep(1L, 10)`. 
+
 # collapse 1.9.5
 
-* Using `DATAPTR_RO` to point to R lists because of the use of `ALTLISTS` R-devel. 
+* Using `DATAPTR_RO` to point to R lists because of the use of `ALTLISTS` on R-devel. 
+
+* Replacing `!=` loop controls for SIMD loops with `<` to ensure compatibility on all platforms. Thanks @albertus82 (#399).
 
 # collapse 1.9.4
 

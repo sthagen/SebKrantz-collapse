@@ -763,15 +763,15 @@ SEXP vtypes(SEXP x, SEXP isnum) {
 }
 
 SEXP vlengths(SEXP x, SEXP usenam) {
-  if(TYPEOF(x) != VECSXP) return ScalarInteger(length(x));
+  // if(TYPEOF(x) != VECSXP && TYPEOF(x) != STRSXP) return ScalarInteger(length(x));
   int n = length(x);
   SEXP ans = PROTECT(allocVector(INTSXP, n));
   int *pans = INTEGER(ans);
-  if(ALTREP(x)) {
-    for(int i = 0; i != n; ++i) pans[i] = length(VECTOR_ELT(x, i));
-  } else {
+  if(TYPEOF(x) == VECSXP || TYPEOF(x) == STRSXP) {
     const SEXP *px = SEXPPTR_RO(x);
     for(int i = 0; i != n; ++i) pans[i] = length(px[i]);
+  } else {
+    for(int i = 0; i != n; ++i) pans[i] = 1;
   }
   if(asLogical(usenam)) {
     SEXP nam = getAttrib(x, R_NamesSymbol);
