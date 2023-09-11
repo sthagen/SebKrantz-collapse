@@ -22,24 +22,29 @@ get_collapse(opts = NULL)
 
   \tabular{llll}{
     \code{na.rm} \tab\tab logical, default \code{TRUE}. Sets the default for statistical algorithms such as the \link[=fast-statistical-functions]{Fast Statistical Functions} to skip missing values. If your data does not have missing values, or only in rare cases, it is recommended to change this to \code{FALSE} for performance gains. \emph{Note} that this does not affect other (non-statistical) uses of \code{na.rm} arguments, such as in \code{\link{pivot}}. \cr\cr\cr\cr
+
     \code{sort} \tab\tab logical, default \code{TRUE}. Sets the default for grouping operations to be sorted. This also applies to factor generation using \code{\link{qF}} and tabulation with \code{\link{qtab}}, but excludes other uses of \code{sort} arguments where grouping is not the objective (such as in \code{\link{funique}} or \code{\link{pivot}}). In general, sorted grouping (internally using \code{\link{radixorder}}) is slower than hash-based direct grouping (internally using \code{\link{group}}). However, if data is pre-sorted, sorted grouping is slightly faster. In general, if records don't need to be sorted or you want to maintain their first-appearance order, changing this to \code{FALSE} is recommended and often brings substantial performance gains. \emph{Note} that this also affects internal grouping applied when atomic vectors (except for factors) or lists are passed to \code{g} arguments in \link[=fast-statistical-functions]{Fast Statistical Functions}. \cr\cr\cr\cr
+
     \code{nthreads} \tab\tab integer, default 1. Sets the default for OpenMP multithreading, available in certain statistical and data manipulation functions. Setting values greater than 1 is strongly recommended with larger datasets. \cr\cr\cr\cr
+
+    \code{stable.algo} \tab\tab logical, default \code{TRUE}. Option passed to \code{\link[=fvar]{fvar()/fsd()}} and \code{\link[=qsu]{qsu()}}. \code{FALSE} enables one-pass standard deviation calculation, which is very fast, but might incur catastrophic cancellation if numbers are large and the variance is small. see \code{\link{fvar}} for details. \cr\cr\cr\cr
 
     \code{mask} \tab\tab character, default \code{NULL}. Allows masking existing base R/dplyr functions with faster \emph{collapse} versions, by creating additional functions in the namespace and instantly exporting them: \cr\cr\tab\tab
 
     For example \code{set_collapse(mask = "unique")} (or, equivalently, \code{set_collapse(mask = "funique")}) will create \code{unique <- funique} in the \emph{collapse} namespace, export \code{unique()}, and silently detach and attach the namespace again so R can find it - all in millisecond. Thus calling \code{unique()} afterwards uses the \emph{collapse} version - which is many times faster. \code{funique} remains available and you can still call \code{base::unique} explicitly. \cr\cr\tab\tab
 
-    All \emph{collapse} functions starting with 'f' can be passed to the option (with or without the 'f') e.g. \code{set_collapse(mask = c("subset", "transform", "droplevels"))} creates \code{subset <- fsubset}, \code{transform <- ftransform} etc.. Special functions are \code{"n"} and \code{"table"/"qtab"}. The former will create \code{n <- GRPN}, for use in \code{(f)summarise}/\code{(f)mutate}, but without the additional arguments of \code{\link{GRPN}}. The latter masks \code{table <- qtab}.
+    All \emph{collapse} functions starting with 'f' can be passed to the option (with or without the 'f') e.g. \code{set_collapse(mask = c("subset", "transform", "droplevels"))} creates \code{subset <- fsubset}, \code{transform <- ftransform} etc. Special functions are \code{"n"} and \code{"table"/"qtab"}, and \code{"\%in\%"}, which create \code{n <- GRPN} (for use in \code{(f)summarise}/\code{(f)mutate}), \code{table <- qtab}, and replace \code{\%in\%} with a fast version using \code{\link{fmatch}}, respectively.
     \cr\cr\tab\tab
   There are also a couple of convenience keywords that you can use to mask groups of functions:
   \cr\cr
 
 \tab\tab - \code{"manip"} adds data manipulation functions: \code{fsubset, ftransform, ftransform<-, ftransformv, fcompute, fcomputev, fselect, fselect<-, fgroup_by, fgroup_vars, fungroup, fsummarise, fsummarize, fmutate, frename, findex_by, findex}. \cr\cr
-\tab\tab - \code{"helper"} adds the functions: \code{fdroplevels}, \code{finteraction}, \code{funique}, \code{fnunique}, \code{fduplicated}, \code{fcount}, \code{fcountv}, \code{fquantile}, \code{frange}, \code{fdist}, \code{fnlevels}, \code{fnrow} and \code{fncol}. \cr\cr % fdim not because of infinite recursion
+\tab\tab - \code{"helper"} adds the functions: \code{fdroplevels}, \code{finteraction}, \code{fmatch}, \code{funique}, \code{fnunique}, \code{fduplicated}, \code{fcount}, \code{fcountv}, \code{fquantile}, \code{frange}, \code{fdist}, \code{fnlevels}, \code{fnrow} and \code{fncol}. \cr\cr % fdim not because of infinite recursion
+\tab\tab - \code{"special"} exports \code{n()}, \code{table()} and \code{\%in\%}. See above. \cr\cr
 \tab\tab - \code{"fast-fun"} adds the functions contained in the macro: \code{.FAST_FUN}. See also Note. \cr\cr
 \tab\tab - \code{"fast-stat-fun"} adds the functions contained in the macro: \code{.FAST_STAT_FUN}. See also Note. \cr\cr
 \tab\tab - \code{"fast-trfm-fun"} adds the functions contained in: \code{setdiff(.FAST_FUN, .FAST_STAT_FUN)}. See also Note. \cr\cr
-\tab\tab - \code{"all"} turns on all of the above, and also exports \code{n()} and \code{table()}.\cr\cr
+\tab\tab - \code{"all"} turns on all of the above.\cr\cr
 
 
 \tab\tab The re-attaching of the namespace places \emph{collapse} at the top of the search path (after the global environment), implying that all its exported functions will take priority over other libraries. Users can use \code{fastverse::fastverse_conflicts()} to check which functions are masked following \code{set_collapse(mask = ...)}. The option can be changed at any time with immediate effect. Using \code{set_collapse(mask = NULL)} removes all masked functions from the namespace, and can also be called simply to place \emph{collapse} at the top of the search path. \cr\cr\cr\cr\cr\cr
@@ -95,7 +100,7 @@ A safe way to set options affecting startup behavior is by using a \code{\link{.
 
 % \item \code{option("collapse_DT_alloccol")} sets how many empty columns \emph{collapse} data manipulation functions like \code{ftransform} allocate when taking a shallow copy of \emph{data.table}'s. The default is \code{100L}. Note that the \emph{data.table} default is \code{getOption("datatable.alloccol") = 1024L}. I chose a lower default because shallow copies are taken by each data manipulation function if you manipulate \emph{data.table}'s with collapse, and the cost increases with the number of overallocated columns. With 100 columns, the cost is 2-5 microseconds per copy.
 
-\item \code{"collapse_nthreads"}, \code{"collapse_na.rm"}, \code{"collapse_sort"}, \code{"collapse_mask"} and \code{"collapse_remove"} can be set before loading the package to initialize \code{.op} with different defaults (e.g. using an \code{\link{.Rprofile}} file). Once loaded, these options have no effect, and users need to use \code{set_collapse()} to change them. See also the Note.
+\item \code{"collapse_nthreads"}, \code{"collapse_na_rm"}, \code{"collapse_sort"}, \code{"collapse_stable_algo"}, \code{"collapse_mask"} and \code{"collapse_remove"} can be set before loading the package to initialize \code{.op} with different defaults (e.g. using an \code{\link{.Rprofile}} file). Once loaded, these options have no effect, and users need to use \code{set_collapse()} to change them. See also the Note.
 }
 }
 
