@@ -1,3 +1,9 @@
+# collapse 2.0.1
+
+* `%in%` with `set_collapse(mask = "%in%")` does not warn about overidentification when used with data frames. 
+
+* Fixed several typos in the documentation. 
+
 # collapse 2.0.0
 
 *collapse* 2.0, released in Mid-October 2023, introduces fast table joins and data reshaping capabilities alongside other convenience functions, and enhances the packages global configurability, including interactive namespace control. 
@@ -44,6 +50,8 @@
 **Note** that this option set using `options()` is **non-reversible**, you need to unload *collapse* using `detach("package:collapse", unload = TRUE)` and load it again. 
 -->
 
+* `set_collapse()` also supports options 'digits', 'verbose' and 'stable.algo', enhancing the global configurability of *collapse*. 
+
 * `qM()` now also has a `row.names.col` argument in the second position allowing generation of rownames when converting data frame-like objects to matrix e.g. `qM(iris, "Species")` or `qM(GGDC10S, 1:5)` (interaction of id's). 
 
 * `as_factor_GRP()` and `finteraction()` now have an argument `sep = "."` denoting the separator used for compound factor labels.
@@ -53,6 +61,12 @@
 * `frename()` supports both `new = old` (*pandas*, used to far) and `old = new` (*dplyr*) style renaming conventions.
 
 * `across()` supports negative indices, also in grouped settings: these will select all variables apart from grouping variables. 
+
+* `TRA()` allows shorthands `"NA"` for `"replace_NA"` and `"fill"` for `"replace_fill"`. 
+
+* `group()` experienced a minor speedup with >= 2 vectors as the first two vectors are now hashed jointly. 
+
+* `fquantile()` with `names = TRUE` adds up to 1 digit after the comma in the percent-names, e.g. `fquantile(airmiles, probs = 0.001)` generates appropriate names (not 0% as in the previous version).
 
 # collapse 1.9.6
 
@@ -137,7 +151,7 @@
 
 * Added function `fquantile()`: Fast (weighted) continuous quantile estimation (methods 5-9 following Hyndman and Fan (1996)), implemented fully in C based on quickselect and radixsort algorithms, and also supports an ordering vector as optional input to speed up the process. It is up to 2x faster than `stats::quantile` on larger vectors, but also especially fast on smaller data, where the R overhead of `stats::quantile` becomes burdensome. For maximum performance during repeated executions, a programmers version `.quantile()` with different defaults is also provided. 
 
-* Added function `fdist()`: A fast and versatile replacement for `stats::dist`. It computes a full euclidian distance matrix around 4x faster than `stats::dist` in serial mode, with additional gains possible through multithreading along the distance matrix columns (decreasing thread loads as the matrix is lower triangular). It also supports computing the distance of a matrix with a single row-vector, or simply between two vectors. E.g. `fdist(mat, mat[1, ])` is the same as `sqrt(colSums((t(mat) - mat[1, ])^2)))`, but about 20x faster in serial mode, and `fdist(x, y)` is the same as `sqrt(sum((x-y)^2))`, about 3x faster in serial mode. In both cases (sub-column level) multithreading is available. *Note* that `fdist` does not skip missing values i.e. `NA`'s will result in `NA` distances. There is also no internal implementation for integers or data frames. Such inputs will be coerced to numeric matrices. 
+* Added function `fdist()`: A fast and versatile replacement for `stats::dist`. It computes a full euclidean distance matrix around 4x faster than `stats::dist` in serial mode, with additional gains possible through multithreading along the distance matrix columns (decreasing thread loads as the matrix is lower triangular). It also supports computing the distance of a matrix with a single row-vector, or simply between two vectors. E.g. `fdist(mat, mat[1, ])` is the same as `sqrt(colSums((t(mat) - mat[1, ])^2)))`, but about 20x faster in serial mode, and `fdist(x, y)` is the same as `sqrt(sum((x-y)^2))`, about 3x faster in serial mode. In both cases (sub-column level) multithreading is available. *Note* that `fdist` does not skip missing values i.e. `NA`'s will result in `NA` distances. There is also no internal implementation for integers or data frames. Such inputs will be coerced to numeric matrices. 
 
 * Added function `GRPid()` to easily fetch the group id from a grouping object, especially inside grouped `fmutate()` calls. This addition was warranted especially by the new improved `fnth.default()` method which allows orderings to be supplied for performance improvements. See commends on `fnth()` and the example provided below. 
 
