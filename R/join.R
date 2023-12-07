@@ -7,6 +7,8 @@ sort_merge_join <- function(x_sorted, table, count = FALSE) {
   .Call(C_sort_merge_join, x_sorted, table, ot, count)
 }
 
+multi_match <- function(m, g) .Call(C_multi_match, m, g)
+
 # Modeled after Pandas/Polars:
 # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.join.html
 # https://pola-rs.github.io/polars/py-polars/html/reference/dataframe/api/polars.DataFrame.join.html
@@ -15,6 +17,7 @@ join <- function(x, y,
                  how = "left",
                  suffix = NULL, # c("_x", "_y")
                  validate = "m:m",  # NULL,
+                 multiple = FALSE,
                  sort = FALSE,
                  keep.col.order = TRUE,
                  drop.dup.cols = FALSE,
@@ -97,6 +100,17 @@ join <- function(x, y,
     },
     stop("validate must be one of '1:1', '1:m', 'm:1' or 'm:m'")
   )
+
+  if(multiple) {
+    g <- group(if(rjoin) x[ixon] else y[iyon], group.sizes = TRUE)
+    m <- multi_match(m, g)
+    if(is.list(m)) {
+      if(rjoin) y <- .Call(C_subsetDT, y, m[[1L]], seq_along(y), FALSE)
+      else x <- .Call(C_subsetDT, x, m[[1L]], seq_along(x), FALSE)
+      m <- m[[2L]]
+      if(how == "left" && length(ax[["row.names"]])) ax[["row.names"]] <- .set_row_names(length(m))
+    }
+  }
 
   if(verbose) {
     nx <- length(m) - attr(m, "N.nomatch")
@@ -186,7 +200,7 @@ join <- function(x, y,
       if(cond) {
         um <- if(!count || length(m)-attr(m, "N.distinct")-attr(m, "N.nomatch") != 0L)
           .Call(C_funique, m) else m # This gets the rows of table matched
-        if(!count || attr(m, "N.nomatch")) um <- na_rm(m)
+        if(!count || attr(m, "N.nomatch")) um <- na_rm(um)
         if(count) tsize <- attr(m, "N.groups")
         else {
           tsize <- fnrow(y)
@@ -209,7 +223,7 @@ join <- function(x, y,
         }
       } else { # If all elements of table are matched, this is simply a left join
         how <- "left"
-        y_res <- .Call(C_subsetDT, y, m, iyon, if(count) attr(m, "N.nomatch") else TRUE) # anyNA(um) ??
+        y_res <- .Call(C_subsetDT, y, m, seq_along(y)[-iyon], if(count) attr(m, "N.nomatch") else TRUE) # anyNA(um) ??
         c(x, y_res)
       }
     },
