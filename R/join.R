@@ -103,6 +103,7 @@ join <- function(x, y,
 
   if(multiple) {
     g <- group(if(rjoin) x[ixon] else y[iyon], group.sizes = TRUE)
+    if(verbose) mi <- m
     m <- multi_match(m, g)
     if(is.list(m)) {
       multiple <- 2L
@@ -114,7 +115,8 @@ join <- function(x, y,
   }
 
   if(verbose) {
-    nx <- length(m) - attr(m, "N.nomatch")
+    Nx <- length(if(multiple) mi else m)
+    nx <- Nx - attr(m, "N.nomatch")
     ny <- attr(m, "N.distinct")
     Ny <- attr(m, "N.groups")
     if(verbose == 2L) {
@@ -124,16 +126,29 @@ join <- function(x, y,
       cin_x <- xon
       cin_y <- on
     }
-    xstat <- paste0(nx, "/", length(m), " (", signif(nx/length(m)*100, 3), "%)")
+    xstat <- paste0(nx, "/", Nx, " (", signif(nx/Nx*100, 3), "%)")
     ystat <- paste0(ny, "/", Ny, " (", signif(ny/Ny*100, 3), "%)")
     if(rjoin) {
       tmp <- ystat
       ystat <- xstat
       xstat <- tmp
     }
+    if(multiple) {
+      validate <- switch(validate,
+        "1:1" = "1:1",
+        "1:m" = paste0("1:", signif((if(rjoin) nx else ny) / attr(mi, "N.distinct"), 3)),
+        "m:1" = paste0(signif((if(rjoin) ny else nx) / attr(mi, "N.distinct"), 3), ":1"),
+        "m:m" = paste(signif(c(nx, ny)[if(rjoin) 2:1 else 1:2] / attr(mi, "N.distinct"), 3), collapse = ":"))
+    } else {
+      validate <- switch(validate,
+        "1:1" = "1:1",
+        "1:m" = paste0("1:", if(rjoin) signif(nx / ny, 3) else "1st"),
+        "m:1" = paste0(if(rjoin) "1st" else signif(nx / ny, 3), ":1"),
+        "m:m" = paste(c(signif(nx / ny, 3), "1st")[if(rjoin) 2:1 else 1:2], collapse = ":"))
+    }
     cat(how, " join: ",
         x_name, "[", paste(cin_x, collapse = ", "), "] ",
-        xstat, " <", validate ,"> ",
+        xstat, " <", validate , "> ",
         y_name, "[", paste(cin_y, collapse = ", "), "] ",
         ystat, "\n", sep = "")
   }
@@ -269,7 +284,7 @@ join <- function(x, y,
     } else matched <- "matched"
     # TODO: better?
     # matched <- paste0(y_name, "_", y_name)
-    mc <- switch(how,
+    mc <- switch(how, left_setrn =,
                  left = structure(is.na(m) + 1L, levels = c(matched, x_name), class = c("factor", "na.included")),
                  right = structure(is.na(m) + 1L, levels = c(matched, y_name), class = c("factor", "na.included")),
                  full = structure(vec(list(is.na(m) + 1L, alloc(3L, fnrow(res)-length(m)))), levels = c(matched, x_name, y_name), class = c("factor", "na.included")),
