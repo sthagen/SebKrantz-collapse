@@ -52,7 +52,7 @@ void writeNA(SEXP v, const int from, const int n)
 
 // Added, to replace memrecycle
 void writeValue(SEXP target, SEXP source, const int from, const int n) {
-  int tt = TYPEOF(target), coerce = TYPEOF(source) != tt, ls = LENGTH(source);
+  int tt = TYPEOF(target), coerce = TYPEOF(source) != tt, os = isObject(source), ls = LENGTH(source);
   if(coerce) source = PROTECT(coerceVector(source, tt));
   if(LENGTH(target) < n) error("Attempting to write %d elements to a vector of length %d", n, LENGTH(target));
   if(ls < n) {
@@ -74,12 +74,13 @@ void writeValue(SEXP target, SEXP source, const int from, const int n) {
     } break;
     case REALSXP: {
       if (INHERITS(target, char_integer64)) {
-      int64_t *vd = (int64_t *)REAL(target), value = (int64_t)REAL(source)[0];
-      for (int i=from; i<=to; ++i) vd[i] = value;
-    } else {
-      double *vd = REAL(target), value = REAL(source)[0];
-      for (int i=from; i<=to; ++i) vd[i] = value;
-    }
+        int64_t *vd = (int64_t *)REAL(target);
+        int64_t value = (coerce || os == 0) ? (int64_t)REAL(source)[0] : ((int64_t *)REAL(source))[0];
+        for (int i=from; i<=to; ++i) vd[i] = value;
+      } else {
+        double *vd = REAL(target), value = REAL(source)[0];
+        for (int i=from; i<=to; ++i) vd[i] = value;
+      }
     } break;
     case CPLXSXP: {
       Rcomplex *vd = COMPLEX(target), value = COMPLEX(source)[0];
@@ -105,7 +106,7 @@ void writeValue(SEXP target, SEXP source, const int from, const int n) {
       break;
     case REALSXP: {
       if (INHERITS(target, char_integer64)) {
-        if(coerce) {
+        if(coerce || os == 0) {
           int64_t *ptgt = (int64_t *)REAL(target) + from;
           const double *ptcol = REAL_RO(source);
           for(int i = 0; i != n; ++i) ptgt[i] = ptcol[i];
