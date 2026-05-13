@@ -3,48 +3,75 @@
 
 // Adapted from fsum.c
 
+#define FMEAN_N_ACC 4
+
 double fmean_double_impl(const double *restrict px, const int narm, const int l) {
   if(narm) {
     int j = 1, n = 1;
     double mean = px[0];
     while(ISNAN(mean) && j!=l) mean = px[j++];
     if(j != l) {
-      #pragma omp simd reduction(+:mean,n)
-      for(int i = j; i < l; ++i) {
-          int tmp = NISNAN(px[i]);
-          mean += tmp ? px[i] : 0.0;
-          n += tmp ? 1 : 0;
+      double acc[FMEAN_N_ACC] = {0, 0, 0, 0};
+      int nacc[FMEAN_N_ACC] = {0, 0, 0, 0};
+      int rem = j + (l - j) % FMEAN_N_ACC;
+      for(int i = j; i < rem; ++i) {
+        int tmp = NISNAN(px[i]);
+        acc[0] += tmp ? px[i] : 0.0;
+        nacc[0] += tmp;
+      }
+      for(int i = rem; i < l; i += FMEAN_N_ACC) {
+        for(int k = 0; k < FMEAN_N_ACC; ++k) {
+          int tmp = NISNAN(px[i + k]);
+          acc[k] += tmp ? px[i + k] : 0.0;
+          nacc[k] += tmp;
+        }
+      }
+      for(int k = 0; k < FMEAN_N_ACC; ++k) {
+        mean += acc[k];
+        n += nacc[k];
       }
     }
-    return  mean / n;
+    return mean / n;
   }
-  double mean = 0;
-  #pragma omp simd reduction(+:mean)
-  for(int i = 0; i < l; ++i) {
-    // if(ISNAN(px[i])) {
-    //   mean = px[i];
-    //   break;
-    // }
-    mean += px[i];
+  double acc[FMEAN_N_ACC] = {0, 0, 0, 0};
+  int rem = l % FMEAN_N_ACC;
+  for(int i = 0; i < rem; ++i) acc[0] += px[i];
+  for(int i = rem; i < l; i += FMEAN_N_ACC) {
+    for(int k = 0; k < FMEAN_N_ACC; ++k) acc[k] += px[i + k];
   }
-  return mean / l;
+  return (acc[0] + acc[1] + acc[2] + acc[3]) / l;
 }
 
 double fmean_double_omp_impl(const double *restrict px, const int narm, const int l, const int nthreads) {
-  double mean = 0;
   if(narm) {
-    int n = 0;
-    #pragma omp parallel for simd num_threads(nthreads) reduction(+:mean,n)
-    for(int i = 0; i < l; ++i) {
+    double acc[FMEAN_N_ACC] = {0, 0, 0, 0};
+    int nacc[FMEAN_N_ACC] = {0, 0, 0, 0};
+    int rem = l % FMEAN_N_ACC;
+    for(int i = 0; i < rem; ++i) {
       int tmp = NISNAN(px[i]);
-      mean += tmp ? px[i] : 0.0;
-      n += tmp ? 1 : 0;
+      acc[0] += tmp ? px[i] : 0.0;
+      nacc[0] += tmp;
     }
+    #pragma omp parallel for simd num_threads(nthreads) reduction(+:acc[:FMEAN_N_ACC],nacc[:FMEAN_N_ACC])
+    for(int i = rem; i < l; i += FMEAN_N_ACC) {
+      for(int k = 0; k < FMEAN_N_ACC; ++k) {
+        int tmp = NISNAN(px[i + k]);
+        acc[k] += tmp ? px[i + k] : 0.0;
+        nacc[k] += tmp;
+      }
+    }
+    double mean = acc[0] + acc[1] + acc[2] + acc[3];
+    int n = nacc[0] + nacc[1] + nacc[2] + nacc[3];
     return n == 0 ? NA_REAL : mean / n;
   }
-  #pragma omp parallel for simd num_threads(nthreads) reduction(+:mean)
-  for(int i = 0; i < l; ++i) mean += px[i];
-  return mean / l;
+  double acc[FMEAN_N_ACC] = {0, 0, 0, 0};
+  int rem = l % FMEAN_N_ACC;
+  for(int i = 0; i < rem; ++i) acc[0] += px[i];
+  #pragma omp parallel for simd num_threads(nthreads) reduction(+:acc[:FMEAN_N_ACC])
+  for(int i = rem; i < l; i += FMEAN_N_ACC) {
+    for(int k = 0; k < FMEAN_N_ACC; ++k) acc[k] += px[i + k];
+  }
+  return (acc[0] + acc[1] + acc[2] + acc[3]) / l;
 }
 
 void fmean_double_g_impl(double *restrict pout, const double *restrict px, const int ng, const int *restrict pg, const int *restrict pgs, const int narm, const int l) {
