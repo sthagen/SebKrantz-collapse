@@ -120,7 +120,7 @@ g2 <- qF(sample.int(5, 32, TRUE))
 gl <- list(g, g2)
 
   # This is to fool very silly checks on CRAN scanning the code of the tests
-if(identical(Sys.getenv("LOCAL"), "TRUE"))
+if(identical(Sys.getenv("LOCAL"), "TRUE") && requireNamespace("lfe", quietly = TRUE))
   demeanlist <- eval(parse(text = paste0("lfe", ":", ":", "demeanlist")))
 
 tol <- if(identical(Sys.getenv("LOCAL"), "TRUE")) 1e-5 else 1e-4
@@ -129,7 +129,7 @@ if(requireNamespace("fixest", quietly = TRUE)) {
 demean <- fixest::demean # eval(parse(text = paste0("fixest", ":", ":", "demean")))
 
 # lfe is back on CRAN: This now also seems to produce a warning !!!!!!!
-if(identical(Sys.getenv("LOCAL"), "TRUE"))
+if(identical(Sys.getenv("LOCAL"), "TRUE") && exists("demeanlist", mode = "function"))
 test_that("fhdbetween with two factors performs like demeanlist", {
   expect_equal(fhdbetween(x, fl), demeanlist(x, fl, means = TRUE), tolerance = tol)
   expect_equal(fhdbetween(xNA, fl), demeanlist(xNA, fl, means = TRUE, na.rm = TRUE), tolerance = tol)
