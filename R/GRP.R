@@ -131,7 +131,7 @@ GRP.default <- function(X, by = NULL, sort = .op[["sort"]], decreasing = FALSE, 
     # Falls through to the existing path when no grouping column is a factor (matches dplyr).
     if(!drop) {
       cols <- if(by_null) unclass(X) else .subset(unclass(X), by)
-      if(any(vapply(unattrib(cols), is.factor, TRUE))) {
+      if(any(.Call(C_vtypes, cols, 2L))) {
         res <- .Call(C_GRP_default_drop, X, cols, namby, return.groups)
         return(`oldClass<-`(list(N.groups = res[[1L]],
                               group.id = res[[2L]],
