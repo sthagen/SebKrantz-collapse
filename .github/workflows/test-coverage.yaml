@@ -29,7 +29,7 @@ jobs:
 
       - name: Test coverage
         run: |
-          Sys.setenv(NCRAN = TRUE, NMAC = TRUE, OMP = TRUE)
+          Sys.setenv(NCRAN = TRUE, NMAC = TRUE, OMP = TRUE, LOCAL = TRUE)
           suppressWarnings(covr::codecov(
             type = "all",
             quiet = FALSE,

@@ -12,6 +12,12 @@ bsd <- stats::sd
 bmin <- base::min
 bmax <- base::max
 
+# dplyr >= 1.1: summarise requires size-1 per group; reframe for multi-row (e.g. quantile)
+dply_multi <- function(.data, ...) {
+  if(utils::packageVersion("dplyr") >= "1.1.0") dplyr::reframe(.data, ...) else
+    dplyr::summarise(.data, ..., .groups = "drop")
+}
+
 NCRAN <- identical(Sys.getenv("NCRAN"), "TRUE")
 
 mtc <- dplyr::as_tibble(mtcars)
@@ -55,7 +61,7 @@ test_that("fsummarise works like dplyr::summarise for tagged vector expressions"
 
  # Multi-return values
  expect_equal(smr(gmtc, mpg = quantile(mpg)),
-              dplyr::summarise(gmtc, mpg = quantile(mpg), .groups = "drop") %>% tfm(mpg = unname(mpg)))
+              dply_multi(gmtc, mpg = quantile(mpg)) %>% tfm(mpg = unname(mpg)))
 
  # More complex expressions
  expect_equal(smr(gmtc, mpg = bmean(mpg) + 1),
@@ -64,13 +70,13 @@ test_that("fsummarise works like dplyr::summarise for tagged vector expressions"
   expect_equal(smr(gmtc, mpg = bmean(mpg) + q),
               dplyr::summarise(gmtc, mpg = bmean(mpg) + q, .groups = "drop"))
  expect_equal(smr(gmtc, mpg = quantile(mpg) + q),
-              dplyr::summarise(gmtc, mpg = quantile(mpg) + q, .groups = "drop") %>% tfm(mpg = unname(mpg)))
+              dply_multi(gmtc, mpg = quantile(mpg) + q) %>% tfm(mpg = unname(mpg)))
 
  expect_equal(smr(gmtc, mpg = bmean(mpg) + bmax(v)),
               dplyr::summarise(gmtc, mpg = bmean(mpg) + bmax(v), .groups = "drop"))
 
  expect_equal(smr(gmtc, mpg = quantile(mpg) + bmax(v)),
-              dplyr::summarise(gmtc, mpg = quantile(mpg) + bmax(v), .groups = "drop") %>% tfm(mpg = unname(mpg)))
+              dply_multi(gmtc, mpg = quantile(mpg) + bmax(v)) %>% tfm(mpg = unname(mpg)))
 
  expect_equal(smr(gmtc, mpg = bmean(log(mpg))),
               dplyr::summarise(gmtc, mpg = bmean(log(mpg)), .groups = "drop"))
@@ -79,7 +85,7 @@ test_that("fsummarise works like dplyr::summarise for tagged vector expressions"
               dplyr::summarise(gmtc, mpg = bmean(log(mpg)) + bmax(qsec), .groups = "drop"))
 
  expect_equal(smr(gmtc, mpg = quantile(mpg) + bmax(qsec)),
-              dplyr::summarise(gmtc, mpg = quantile(mpg) + bmax(qsec), .groups = "drop") %>% tfm(mpg = unname(mpg)))
+              dply_multi(gmtc, mpg = quantile(mpg) + bmax(qsec)) %>% tfm(mpg = unname(mpg)))
 
  expect_equal(smr(gmtc, mpg = fmean(log(mpg)) + fmax(qsec)),
               dplyr::summarise(gmtc, mpg = bmean(log(mpg)) + bmax(qsec), .groups = "drop"))
@@ -120,7 +126,7 @@ test_that("fsummarise works like dplyr::summarise for tagged vector expressions"
               dplyr::summarise(gmtc, mpg = fmean(mpg, w = wt) + bmax(qsec), .groups = "drop"))
 
  expect_equal(smr(gmtc, mpg = quantile(mpg) + weighted.mean(mpg, wt)),
-              dplyr::summarise(gmtc, mpg = quantile(mpg) + weighted.mean(mpg, wt), .groups = "drop") %>% tfm(mpg = unname(mpg)))
+              dply_multi(gmtc, mpg = quantile(mpg) + weighted.mean(mpg, wt)) %>% tfm(mpg = unname(mpg)))
 
  expect_warning(smr(gmtc, mpg = quantile(mpg) + fmean(mpg, wt)))
 
