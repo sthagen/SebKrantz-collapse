@@ -519,3 +519,79 @@ test_that("funique works well", {
               lapply(GGDC10S, function(x) unattrib(funique(x))))
 
 })
+
+test_that("GRP.default(drop = FALSE) preserves unused factor levels", {
+
+  df <- data.frame(
+    f1 = factor(c("a", "b", "a"), levels = c("a", "b", "c")),
+    f2 = factor(c("x", "x", "y"), levels = c("x", "y", "z")),
+    v  = c(1, 2, 3)
+  )
+
+  # Basic Cartesian product
+  g <- GRP.default(df, ~ f1 + f2, drop = FALSE)
+  expect_equal(g$N.groups, 9L)
+  expect_equal(g$group.sizes, c(1L, 1L, 0L, 1L, 0L, 0L, 0L, 0L, 0L))
+  expect_equal(length(g$group.id), 3L)
+  expect_false(anyNA(g$group.id))
+  expect_equal(nrow(g$groups), 9L)
+  expect_equal(names(g$groups), c("f1", "f2"))
+  # group.starts: first occurrence, 0 for unobserved
+  expect_equal(g$group.starts[g$group.sizes == 0L], rep(0L, 6L))
+
+  # drop = TRUE returns observed groups only
+  gt <- GRP.default(df, ~ f1 + f2, drop = TRUE)
+  expect_equal(gt$N.groups, 3L)
+
+  # Falls through to default path when no factor columns
+  df2 <- data.frame(x = c(1, 2, 1), y = c(10, 20, 10))
+  g2 <- GRP.default(df2, drop = FALSE)
+  expect_equal(g2$N.groups, GRP.default(df2, drop = TRUE)$N.groups)
+
+  # Factor with NAs: NA becomes an explicit level
+  df3 <- data.frame(f = factor(c("a", "b", NA, "a"), levels = c("a", "b", "c")))
+  g3 <- GRP.default(df3, ~ f, drop = FALSE)
+  expect_equal(g3$N.groups, 4L)
+  expect_false(anyNA(g3$group.id))
+
+  # Mix factor + non-factor: non-factor uses observed unique values
+  df4 <- data.frame(
+    f = factor(c("a", "b", "a", "c"), levels = c("a", "b", "c", "d")),
+    x = c(10, 20, 10, 20)
+  )
+  g4 <- GRP.default(df4, ~ f + x, drop = FALSE)
+  expect_equal(g4$N.groups, 8L)  # 4 levels x 2 observed values
+  expect_equal(sum(g4$group.sizes), 4L)
+
+  # fgroup_by with .drop = FALSE
+  gdf <- fgroup_by(df, f1, f2, .drop = FALSE)
+  gg <- attr(gdf, "groups")
+  expect_equal(gg$N.groups, 9L)
+
+  # Aggregation through grouped df preserves empty groups (as NA / 0)
+  res <- fsum(fgroup_by(df, f1, f2, .drop = FALSE), v)
+  expect_equal(nrow(res), 9L)
+
+  # fcount preserves levels
+  fc <- fcount(df, f1, f2, drop = FALSE)
+  expect_equal(nrow(fc), 9L)
+  expect_equal(fc$N, c(1L, 1L, 0L, 1L, 0L, 0L, 0L, 0L, 0L))
+
+  # data.table class is preserved
+  if(requireNamespace("data.table", quietly = TRUE)) {
+    dt <- data.table::as.data.table(df)
+    fcd <- fcount(dt, f1, f2, drop = FALSE)
+    expect_true(data.table::is.data.table(fcd))
+  }
+
+  # tibble class is preserved
+  if(requireNamespace("tibble", quietly = TRUE)) {
+    tb <- tibble::as_tibble(df)
+    fct <- fcount(tb, f1, f2, drop = FALSE)
+    expect_true(inherits(fct, "tbl_df"))
+  }
+
+  # collap with drop = FALSE
+  rc <- collap(df, ~ f1 + f2, drop = FALSE)
+  expect_equal(nrow(rc), 9L)
+})

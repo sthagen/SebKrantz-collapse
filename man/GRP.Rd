@@ -37,7 +37,7 @@ GRP(X, \dots)
 
 \method{GRP}{default}(X, by = NULL, sort = .op[["sort"]], decreasing = FALSE, na.last = TRUE,
     return.groups = TRUE, return.order = sort, method = "auto",
-    call = TRUE, \dots)
+    drop = TRUE, call = TRUE, \dots)
 
 \method{GRP}{factor}(X, \dots, group.sizes = TRUE, drop = FALSE, return.groups = TRUE,
     call = TRUE)
@@ -70,12 +70,14 @@ greorder(x, g, \dots)
 
 # Fast, class-agnostic pendant to dplyr::group_by for use with fast functions, see details
 fgroup_by(.X, \dots, sort = .op[["sort"]], decreasing = FALSE, na.last = TRUE,
-          return.groups = TRUE, return.order = sort, method = "auto")
+          return.groups = TRUE, return.order = sort, method = "auto",
+          .drop = TRUE)
 # Standard-evaluation analogue (slim wrapper around GRP.default(), for programming)
 group_by_vars(X, by = NULL, ...)
 # Shorthand for fgroup_by
 gby(.X, \dots, sort = .op[["sort"]], decreasing = FALSE, na.last = TRUE,
-    return.groups = TRUE, return.order = sort, method = "auto")
+    return.groups = TRUE, return.order = sort, method = "auto",
+    .drop = TRUE)
 
 # Get grouping columns from a grouped data frame created with dplyr::group_by or fgroup_by
 fgroup_vars(X, return = "data")
@@ -111,7 +113,7 @@ fungroup(X, \dots)
 
   \item{group.sizes}{logical. \code{TRUE} tabulates factor levels using \code{\link{tabulate}} to create a vector of group sizes; \code{FALSE} leaves that slot empty when converting from factors.}
 
-  \item{drop}{logical. \code{TRUE} efficiently drops unused factor levels beforehand using \code{\link{fdroplevels}}.}
+  \item{drop, .drop}{logical. In \code{GRP.factor}: \code{TRUE} efficiently drops unused factor levels beforehand using \code{\link{fdroplevels}}. In \code{GRP.default}/\code{fgroup_by}/\code{gby}: if \code{FALSE} and any of the grouping columns are factors, the full Cartesian product of factor levels (combined with the observed unique values of any non-factor grouping columns) is used to define the groups. Group combinations not present in the data have \code{group.sizes} of \code{0} and \code{group.starts} of \code{0L}. This is analogous to \code{dplyr::group_by(.drop = FALSE)} and useful for aggregations or counts that should retain empty groups (e.g. \code{fcount(..., drop = FALSE)} or \code{collap(..., drop = FALSE)}). The default is \code{TRUE} (only observed combinations are kept). Only applies to the default method - has no effect for grouped data frames or factor/qG/pseries/pdata.frame inputs.}
 
   \item{call}{logical. \code{TRUE} calls \code{\link{match.call}} and saves it in the final slot of the GRP object.}
 

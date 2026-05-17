@@ -10,10 +10,10 @@ A much faster replacement for \code{dplyr::count}.
 }
 \usage{
 fcount(x, ..., w = NULL, name = "N", add = FALSE,
-      sort = FALSE, decreasing = FALSE)
+      sort = FALSE, decreasing = FALSE, drop = TRUE)
 
 fcountv(x, cols = NULL, w = NULL, name = "N", add = FALSE,
-        sort = FALSE, ...)
+        sort = FALSE, drop = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,6 +25,7 @@ fcountv(x, cols = NULL, w = NULL, name = "N", add = FALSE,
   \item{add}{\code{TRUE} adds the count column to \code{x}. Alternatively \code{add = "group_vars"} (or \code{add = "gv"} for parsimony) can be used to retain only the variables selected for counting in \code{x} and the count.}
   \item{sort, decreasing}{arguments passed to \code{\link{GRP}} affecting the order of rows in the output (if \code{add = FALSE}), and the algorithm used for counting. In general, \code{sort = FALSE} is faster unless data is already sorted by the columns used for counting.
 }
+  \item{drop}{logical. \code{FALSE} retains zero-count rows for unobserved combinations of factor levels (analogous to \code{dplyr::count(..., .drop = FALSE)}); applies only when at least one of the counted columns is a factor. See \code{\link{GRP}} (\code{drop} argument of \code{GRP.default}).}
 }
 \value{
 If \code{x} is a list, an object of the same type as \code{x} with a column (\code{name}) added at the end giving the count. Otherwise, if \code{x} is atomic, a data frame returned from \code{\link[=qDF]{qDF(x)}} with the count column added. By default (\code{add = FALSE}) only the unique rows of \code{x} of the columns used for counting are returned.

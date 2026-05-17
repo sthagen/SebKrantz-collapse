@@ -95,7 +95,7 @@ rbindlist_factor <- function(l, idcol = "Function") {
 collap <- function(X, by, FUN = fmean, catFUN = fmode, cols = NULL, w = NULL, wFUN = fsum, custom = NULL,
                    ...,
                    keep.by = TRUE, keep.w = TRUE, keep.col.order = TRUE, sort = .op[["sort"]], decreasing = FALSE,
-                   na.last = TRUE, return.order = sort, method = "auto", parallel = FALSE, mc.cores = 2L,
+                   na.last = TRUE, return.order = sort, method = "auto", drop = TRUE, parallel = FALSE, mc.cores = 2L,
                    return = c("wide","list","long","long_dupl"), give.names = "auto") {
 
   return <- switch(return[1L], wide = 1L, list = 2L, long = 3L, long_dupl = 4L, stop("Unknown return output option"))
@@ -127,14 +127,14 @@ collap <- function(X, by, FUN = fmean, catFUN = fmode, cols = NULL, w = NULL, wF
       numby <- ckmatch(all.vars(by), nam)
       if(ncustoml) v <- if(is.null(cols)) seq_along(X)[-numby] else cols2int(cols, X, nam)
     }
-    by <- GRP.default(X, numby, sort, decreasing, na.last, keep.by, return.order, method, call = FALSE)
+    by <- GRP.default(X, numby, sort, decreasing, na.last, keep.by, return.order, method, drop = drop, call = FALSE)
   } else if(is.atomic(by)) {
     numby <- 0L
     if(ncustoml) if(is.null(cols)) vl <- FALSE else v <- cols2int(cols, X, nam)
-    by <- GRP.default(`names<-`(list(by), l1orlst(as.character(substitute(by)))), NULL, sort, decreasing, na.last, keep.by, return.order, method, call = FALSE)
+    by <- GRP.default(`names<-`(list(by), l1orlst(as.character(substitute(by)))), NULL, sort, decreasing, na.last, keep.by, return.order, method, drop = drop, call = FALSE)
   } else {
     if(ncustoml) if(is.null(cols)) vl <- FALSE else v <- cols2int(cols, X, nam)
-    if(!is_GRP(by)) by <- GRP.default(by, NULL, sort, decreasing, na.last, keep.by, return.order, method, call = FALSE)
+    if(!is_GRP(by)) by <- GRP.default(by, NULL, sort, decreasing, na.last, keep.by, return.order, method, drop = drop, call = FALSE)
     numby <- rep(0L, length(by[[5L]]))
     if(keep.by && !vl && any(m <- nam %in% by[[5L]])) {
       v <- whichv(m, FALSE)
@@ -322,7 +322,7 @@ collap <- function(X, by, FUN = fmean, catFUN = fmode, cols = NULL, w = NULL, wF
 # collapv: allows vector input to by and w
 collapv <- function(X, by, FUN = fmean, catFUN = fmode, cols = NULL, w = NULL, wFUN = fsum, custom = NULL, ...,
                     keep.by = TRUE, keep.w = TRUE, keep.col.order = TRUE, sort = .op[["sort"]], decreasing = FALSE,
-                    na.last = TRUE, return.order = sort, method = "auto", parallel = FALSE, mc.cores = 2L,
+                    na.last = TRUE, return.order = sort, method = "auto", drop = TRUE, parallel = FALSE, mc.cores = 2L,
                     return = c("wide","list","long","long_dupl"), give.names = "auto") {
 
   return <- switch(return[1L], wide = 1L, list = 2L, long = 3L, long_dupl = 4L, stop("Unknown return output option"))
@@ -343,7 +343,7 @@ collapv <- function(X, by, FUN = fmean, catFUN = fmode, cols = NULL, w = NULL, w
 
   # identifying by
   numby <- cols2int(by, X, nam)
-  by <- GRP.default(X, numby, sort, decreasing, na.last, keep.by, return.order, method, call = FALSE)
+  by <- GRP.default(X, numby, sort, decreasing, na.last, keep.by, return.order, method, drop = drop, call = FALSE)
   if(ncustoml) v <- if(is.null(cols)) seq_along(X)[-numby] else cols2int(cols, X, nam)
 
 
