@@ -25,6 +25,17 @@ NumericVector fbstatstemp(NumericVector x, bool ext = false, int ng = 0, Integer
   int l = x.size();
   bool weights = !Rf_isNull(w);
 
+  if(l == 0 && ng == 0) {
+    int d = ((ext) ? 7 : 5) + weights;
+    NumericVector result(d, NA_REAL);
+    result[0] = 0;
+    if(setn) {
+      Rf_namesgets(result, get_stats_names(d));
+      Rf_classgets(result, CharacterVector::create("qsu","table"));
+    }
+    return result;
+  }
+
    if(!ext) {
     if(ng == 0) { // No groups
       if(l == 1) { // need this so that qsu(1) works properly
