@@ -1,7 +1,9 @@
 # collapse 2.1.6
 
 * The repo has moved to `fastverse/collapse` and the website to [fastverse.org/collapse](https://fastverse.org/collapse/)---for better visibility and maintenance. Appropriate redirects from the old repo/site have been implemented.
-  Selected people now have access to the repo through the organization account and may respond to issues or submit fixes. 
+  Selected people now have access to the repo through the organization account and may respond to issues or submit fixes.
+
+* `GRP.default()` gains a `drop = TRUE` argument. Setting `drop = FALSE` (and providing at least one factor among the grouping columns) retains all combinations of factor levels with the observed unique values of non-factor grouping columns---the full Cartesian product---similar to `dplyr::group_by(.drop = FALSE)`. Unobserved combinations get `group.sizes` of `0` and `group.starts` of `0L`. Correspondingly, `fgroup_by()`/`gby()` gain a `.drop` argument, and `fcount()`/`fcountv()`/`collap()`/`collapv()` gain a `drop` argument, enabling counts and aggregations that retain empty groups (#820).
 
 * Added new AI-generated interactive/chattable [DeepWiki documentation](https://deepwiki.com/fastverse/collapse).
 

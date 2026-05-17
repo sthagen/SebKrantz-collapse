@@ -470,6 +470,181 @@ SEXP fwtabulate(SEXP x, SEXP w, SEXP ngp, SEXP ckna) {
   return tab;
 }
 
+// ---------------------------------------------------------------------------
+// GRP.default with drop = FALSE: build full Cartesian product of factor levels
+// (and observed unique values for non-factor columns) as the grouping universe.
+//
+// X:        original list / data.frame (used for class preservation on groups)
+// cols:     list of grouping columns (already subset from X by `by`)
+// namby:    character vector of names for the groups data.frame
+// retgrp_:  scalar logical, whether to return the groups data.frame
+//
+// Returns list(N.groups, group.id, group.sizes, group.starts, groups).
+// `group.id` is 1-based and free of NAs (NAs become explicit factor levels).
+// `group.sizes`/`group.starts` have length Ng (= product of per-column sizes),
+// with 0 in `group.sizes` and 0 in `group.starts` for combinations not observed.
+// ---------------------------------------------------------------------------
+SEXP GRP_default_drop_C(SEXP X, SEXP cols, SEXP namby, SEXP retgrp_) {
+  if(TYPEOF(cols) != VECSXP) error("Internal error: cols must be a list");
+  int nc = length(cols), retgrp = asLogical(retgrp_);
+  if(nc == 0) error("GRP.default(drop = FALSE) requires at least one grouping column");
+
+  int n = length(VECTOR_ELT(cols, 0));
+  int nprotect = 0;
+  SEXP codes_list = PROTECT(allocVector(VECSXP, nc)); ++nprotect; // per-col 1-based codes
+  SEXP levs_list  = PROTECT(allocVector(VECSXP, nc)); ++nprotect; // per-col level/unique-value vectors
+  int *isfac = (int*) R_alloc(nc, sizeof(int));
+  int *pnl   = (int*) R_alloc(nc, sizeof(int));
+
+  long long Ng_ll = 1;
+  for(int j = 0; j < nc; ++j) {
+    SEXP col = VECTOR_ELT(cols, j);
+    if(length(col) != n) error("All grouping columns must have equal length");
+
+    if(isFactor(col)) {
+      isfac[j] = 1;
+      SEXP lev = getAttrib(col, R_LevelsSymbol);
+      int nl = length(lev);
+      const int *pcol = INTEGER_RO(col);
+
+      // Does the factor already have an explicit NA level? Does the column contain NAs?
+      int hasNAlev = 0, na_lev_pos = 0;
+      for(int k = 0; k < nl; ++k) {
+        if(STRING_ELT(lev, k) == NA_STRING) { hasNAlev = 1; na_lev_pos = k + 1; break; }
+      }
+      int colHasNA = 0;
+      for(int i = 0; i < n; ++i) if(pcol[i] == NA_INTEGER) { colHasNA = 1; break; }
+
+      if(colHasNA) {
+        // Remap NA codes to an NA level (adding one if necessary). Mirrors addNA2().
+        int nl_new = hasNAlev ? nl : nl + 1;
+        int na_code = hasNAlev ? na_lev_pos : nl_new;
+        SEXP new_lev = lev;
+        if(!hasNAlev) {
+          new_lev = PROTECT(allocVector(STRSXP, nl_new)); ++nprotect;
+          for(int k = 0; k < nl; ++k) SET_STRING_ELT(new_lev, k, STRING_ELT(lev, k));
+          SET_STRING_ELT(new_lev, nl, NA_STRING);
+        }
+        SEXP codes = PROTECT(allocVector(INTSXP, n)); ++nprotect;
+        int *pcodes = INTEGER(codes);
+        for(int i = 0; i < n; ++i) pcodes[i] = pcol[i] == NA_INTEGER ? na_code : pcol[i];
+        SET_VECTOR_ELT(codes_list, j, codes);
+        SET_VECTOR_ELT(levs_list,  j, new_lev);
+        pnl[j] = nl_new;
+      } else {
+        // Use factor codes / levels as-is (no allocation)
+        SET_VECTOR_ELT(codes_list, j, col);
+        SET_VECTOR_ELT(levs_list,  j, lev);
+        pnl[j] = nl;
+      }
+    } else {
+      isfac[j] = 0;
+      // Non-factor: hash the column. groupVec returns 1-based codes; NAs are
+      // assigned a dedicated code (na.included), so combined IDs are NA-free too.
+      SEXP g = PROTECT(groupVec(col, retgrp ? ScalarLogical(1) : ScalarLogical(0), ScalarLogical(0)));
+      ++nprotect;
+      int ng = asInteger(getAttrib(g, sym_n_groups));
+      SET_VECTOR_ELT(codes_list, j, g);
+      pnl[j] = ng;
+      if(retgrp) {
+        // Unique values in hash-encounter order = col[starts]
+        SEXP starts = getAttrib(g, sym_starts);
+        SEXP uvals  = PROTECT(allocVector(TYPEOF(col), ng)); ++nprotect;
+        subsetVectorRaw(uvals, col, starts, /*anyNA=*/ false);
+        copyMostAttrib(col, uvals);
+        SET_VECTOR_ELT(levs_list, j, uvals);
+      }
+    }
+
+    Ng_ll *= pnl[j];
+    if(Ng_ll > INT_MAX)
+      error("Total number of group combinations (%lld) exceeds INT_MAX. Consider using drop = TRUE.", Ng_ll);
+  }
+  int Ng = (int) Ng_ll;
+
+  // --- Combined group.id via stride arithmetic (cf. fcrosscolon) ---
+  SEXP gid = PROTECT(allocVector(INTSXP, n)); ++nprotect;
+  int *pgid = INTEGER(gid);
+  const int *p0 = INTEGER_RO(VECTOR_ELT(codes_list, 0));
+  memcpy(pgid, p0, sizeof(int) * n);
+  long long stride = pnl[0];
+  for(int j = 1; j < nc; ++j) {
+    const int *pj = INTEGER_RO(VECTOR_ELT(codes_list, j));
+    int s = (int) stride;
+    for(int i = 0; i < n; ++i) pgid[i] += (pj[i] - 1) * s;
+    stride *= pnl[j];
+  }
+
+  // --- group.sizes (cf. fwtabulate) and group.starts (first occurrence) ---
+  SEXP gs  = PROTECT(allocVector(INTSXP, Ng)); ++nprotect;
+  SEXP gst = PROTECT(allocVector(INTSXP, Ng)); ++nprotect;
+  int *pgs = INTEGER(gs), *pgst = INTEGER(gst);
+  memset(pgs,  0, sizeof(int) * Ng);
+  memset(pgst, 0, sizeof(int) * Ng);
+  for(int i = 0; i < n; ++i) {
+    int g = pgid[i] - 1;
+    ++pgs[g];
+    if(pgst[g] == 0) pgst[g] = i + 1;
+  }
+
+  // --- groups data.frame: enumerate every combination in column-major order ---
+  SEXP groups = R_NilValue;
+  if(retgrp) {
+    PROTECT(groups = allocVector(VECSXP, nc)); ++nprotect;
+    long long stride_j = 1;
+    for(int j = 0; j < nc; ++j) {
+      int nlj = pnl[j], sj = (int) stride_j;
+      SEXP lev = VECTOR_ELT(levs_list, j);
+
+      if(isfac[j]) {
+        // Build a fresh factor with the same levels and class as the input column
+        SEXP newcol = PROTECT(allocVector(INTSXP, Ng));
+        int *pnew = INTEGER(newcol);
+        for(int g = 0; g < Ng; ++g) pnew[g] = (g / sj) % nlj + 1;
+        setAttrib(newcol, R_LevelsSymbol, lev);
+        SEXP origcol = VECTOR_ELT(cols, j);
+        SEXP cls = getAttrib(origcol, R_ClassSymbol);
+        setAttrib(newcol, R_ClassSymbol, cls);
+        SET_VECTOR_ELT(groups, j, newcol);
+        UNPROTECT(1);
+      } else {
+        // Non-factor: subset the per-column unique values by the index vector
+        SEXP idx = PROTECT(allocVector(INTSXP, Ng));
+        int *pidx = INTEGER(idx);
+        for(int g = 0; g < Ng; ++g) pidx[g] = (g / sj) % nlj + 1;
+        SEXP newcol = PROTECT(allocVector(TYPEOF(lev), Ng));
+        subsetVectorRaw(newcol, lev, idx, /*anyNA=*/ false);
+        copyMostAttrib(lev, newcol);
+        SET_VECTOR_ELT(groups, j, newcol);
+        UNPROTECT(2);
+      }
+      stride_j *= nlj;
+    }
+    // Names and (if applicable) class of groups data.frame: copy class etc. from X
+    // (like C_subsetDT). Only add data.frame row.names if X is itself a data.frame,
+    // matching the drop = TRUE behaviour for plain list inputs.
+    namesgets(groups, namby);
+    if(inherits(X, "data.frame")) {
+      if(isObject(X)) copyMostAttrib(X, groups);
+      SEXP rn = PROTECT(allocVector(INTSXP, 2));
+      INTEGER(rn)[0] = NA_INTEGER;
+      INTEGER(rn)[1] = -Ng;
+      setAttrib(groups, R_RowNamesSymbol, rn);
+      UNPROTECT(1);
+    }
+  }
+
+  // --- Assemble result list ---
+  SEXP res = PROTECT(allocVector(VECSXP, 5)); ++nprotect;
+  SET_VECTOR_ELT(res, 0, ScalarInteger(Ng));
+  SET_VECTOR_ELT(res, 1, gid);
+  SET_VECTOR_ELT(res, 2, gs);
+  SET_VECTOR_ELT(res, 3, gst);
+  SET_VECTOR_ELT(res, 4, groups);
+  UNPROTECT(nprotect);
+  return res;
+}
+
 // Recursive function: doesn't work in C99 Standard
 // int fgcd(int a, int b) {
 //    if(b == 0) return a;
