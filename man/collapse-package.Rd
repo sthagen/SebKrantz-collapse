@@ -125,10 +125,12 @@ The package is coded both in C and C++ and built with \emph{Rcpp}, but also uses
 }
 }
 
-%\references{
-%  This optional section can contain literature or other references for
-%  background information.
-%}
+\references{
+Krantz S (2026).
+\emph{collapse}: Advanced and Fast Statistical Computing and Data Transformation in R.
+\emph{Journal of Statistical Software} \bold{116}(1), 1--38.
+\doi{10.18637/jss.v116.i01}
+}
 %\seealso{
 %  Optional links to other man pages
 %}
