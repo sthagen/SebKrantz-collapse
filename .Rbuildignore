@@ -6,6 +6,7 @@
 ^CONTRIBUTING\.md$
 ^README\.md$
 ^README\.Rmd$
+^CLAUDE\.md$
 ^cran-comments\.md$
 ^experimental$
 ^testing$
@@ -32,6 +33,8 @@ _snaps
 \.orig$
 \.DS_store$
 .DS_store
+\.DS_Store$
+.DS_Store
 testthat-problems.rds
 vignettes/figure
 vignettes/cache
