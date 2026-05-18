@@ -1,9 +1,26 @@
+# collapse 2.1.7
+
+* The *collapse* article is now published in the Journal of Statistical Software: https://doi.org/10.18637/jss.v116.i01. This article is now the primary citation for academic use of *collapse*. It is also a great reference to quickly and thoroughly understand the package. `citation("collapse")` was also updated in this regard. The APA-style citation is:
+
+  Krantz, S. (2026). **collapse**: Advanced and fast statistical computing and data transformation in R. *Journal of Statistical Software, 116*(1), 1–38. [https://doi.org/10.18637/jss.v116.i01](https://doi.org/10.18637/jss.v116.i01)
+
+
+* Performance improvements to `fsum()` and `fmean()` in the non-grouped case through multiple-accumulator SIMD optimizations, particularly benefiting systems without OpenMP support. `fsum()` sees ~2x speedup and `fmean()` ~7x speedup on such systems, with smaller but notable gains on systems with OpenMP. Thanks @TylerSagendorf for the implementation and benchmarking (#824, #828, #832, #833).
+
+* `GRP.default()` gains a `drop = TRUE` argument. Setting `drop = FALSE` (and providing at least one factor among the grouping columns) retains all combinations of factor levels with the observed unique values of non-factor grouping columns---the full Cartesian product---similar to `dplyr::group_by(.drop = FALSE)`. Unobserved combinations get `group.sizes` of `0` and `group.starts` of `0L`. Correspondingly, `fgroup_by()`/`gby()` gain a `.drop` argument, and `fcount()`/`fcountv()`/`collap()`/`collapv()` gain a `drop` argument, enabling counts and aggregations that retain empty groups. Thanks @egoipse for the feature request (#820, #839).
+
+* Fixed a bug in `descr()` that caused R to crash with a segmentation fault when called on zero-row data frames. Thanks @hatschibratschi for reporting (#831).
+
+* Consistency with internal updates to *data.table* regarding growable vectors. Thanks @aitap (#809).
+
+* Force C locale sorting in internal operations for consistency. Thanks @MichaelChirico (#815).
+
+* Added contributor Ivan Krylov (@aitap) to package authors.
+
 # collapse 2.1.6
 
 * The repo has moved to `fastverse/collapse` and the website to [fastverse.org/collapse](https://fastverse.org/collapse/)---for better visibility and maintenance. Appropriate redirects from the old repo/site have been implemented.
   Selected people now have access to the repo through the organization account and may respond to issues or submit fixes.
-
-* `GRP.default()` gains a `drop = TRUE` argument. Setting `drop = FALSE` (and providing at least one factor among the grouping columns) retains all combinations of factor levels with the observed unique values of non-factor grouping columns---the full Cartesian product---similar to `dplyr::group_by(.drop = FALSE)`. Unobserved combinations get `group.sizes` of `0` and `group.starts` of `0L`. Correspondingly, `fgroup_by()`/`gby()` gain a `.drop` argument, and `fcount()`/`fcountv()`/`collap()`/`collapv()` gain a `drop` argument, enabling counts and aggregations that retain empty groups (#820).
 
 * Added new AI-generated interactive/chattable [DeepWiki documentation](https://deepwiki.com/fastverse/collapse).
 
