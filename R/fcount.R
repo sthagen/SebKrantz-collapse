@@ -34,18 +34,20 @@ fcount_core <- function(x, g, w = NULL, name = "N", add = FALSE) {
   condalc(copyMostAttributes(c(res, `names<-`(list(g$group.sizes), name[1L])), res), inherits(x, "data.table"))
 }
 
-fcount <- function(x, ..., w = NULL, name = "N", add = FALSE, sort = FALSE, decreasing = FALSE) {
+fcount <- function(x, ..., w = NULL, name = "N", add = FALSE, sort = FALSE, decreasing = FALSE, drop = TRUE) {
   if(is.list(x)) w <- eval(substitute(w), x, parent.frame())
   else x <- qDF(x)
   if(is.character(add)) add <- switch(add, gv =, group_vars = 2L, stop("add must be TRUE, FALSE or group_vars (gv)")) # add = "g", "groups" or "group_vars"
   # Note: this code duplication with GRP() is needed for GRP() to capture x (using substitute) if x is atomic.
   # if(is.atomic(x)) `names<-`(list(x), l1orlst(as.character(substitute(x)))) else
-  g <- if(missing(...)) GRP(x, sort = sort, decreasing = decreasing, return.groups = !add, return.order = FALSE, call = FALSE) else
-    GRP.default(fselect(x, ...), sort = sort, decreasing = decreasing, return.groups = !add, return.order = FALSE, call = FALSE)
+  g <- if(missing(...)) {
+         if(inherits(x, "grouped_df")) GRP(x, sort = sort, decreasing = decreasing, return.groups = !add, return.order = FALSE, call = FALSE)
+         else GRP.default(x, sort = sort, decreasing = decreasing, return.groups = !add, return.order = FALSE, drop = drop, call = FALSE)
+       } else GRP.default(fselect(x, ...), sort = sort, decreasing = decreasing, return.groups = !add, return.order = FALSE, drop = drop, call = FALSE)
   fcount_core(x, g, w, name, add)
 }
 
-fcountv <- function(x, cols = NULL, w = NULL, name = "N", add = FALSE, sort = FALSE, ...) {
+fcountv <- function(x, cols = NULL, w = NULL, name = "N", add = FALSE, sort = FALSE, drop = TRUE, ...) {
   # Safe enough ? or only allow character ? what about collapv() ?, extra option ?
   # if(length(w) == 1L && is.list(x) && length(unclass(x)) > 1L && (is.character(w) || is.integer(w) || (is.numeric(w) && w %% 1 < 1e-6)))
   if(is.atomic(x)) x <- qDF(x)
@@ -54,7 +56,9 @@ fcountv <- function(x, cols = NULL, w = NULL, name = "N", add = FALSE, sort = FA
     if(is.null(w)) stop("Unknown column: ", w)
   }
   if(is.character(add)) add <- switch(add, gv =, group_vars = 2L, stop("add must be TRUE, FALSE or group_vars (gv)")) # add = "g", "groups" or "group_vars"
-  g <- if(is.null(cols)) GRP(x, sort = sort, return.groups = !add, return.order = FALSE, call = FALSE, ...) else
-    GRP.default(colsubset(x, cols), sort = sort, return.groups = !add, return.order = FALSE, call = FALSE, ...)
+  g <- if(is.null(cols)) {
+         if(inherits(x, "grouped_df")) GRP(x, sort = sort, return.groups = !add, return.order = FALSE, call = FALSE, ...)
+         else GRP.default(x, sort = sort, return.groups = !add, return.order = FALSE, drop = drop, call = FALSE, ...)
+       } else GRP.default(colsubset(x, cols), sort = sort, return.groups = !add, return.order = FALSE, drop = drop, call = FALSE, ...)
   fcount_core(x, g, w, name, add)
 }

@@ -38,9 +38,9 @@ While not more comprehensive or accurate than the structured documentation, it i
 
 You can access the *collapse* DeepWiki [here](https://deepwiki.com/fastverse/collapse).
 
-## Article on arXiv
+## JSS Article
 
-An [article](https://arxiv.org/abs/2403.05038) on *collapse* is forthcoming at [Journal of Statistical Software](https://www.jstatsoft.org/) in early 2026. If you want to 'read something concise' about *collapse*, this is the best place to start. 
+The [collapse article](https://doi.org/10.18637/jss.v116.i01) is published in the [Journal of Statistical Software](https://www.jstatsoft.org/) (volume 116, issue 1). If you want to 'read something concise' about *collapse*, this is the best place to start.
 
 ## Cheatsheet
 

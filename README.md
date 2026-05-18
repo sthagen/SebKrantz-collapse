@@ -13,7 +13,7 @@
 [![minimal R version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-project.org/)
 [![dependencies](https://tinyverse.netlify.app/badge/collapse)](https://CRAN.R-project.org/package=collapse)
 [![DOI](https://zenodo.org/badge/172910283.svg)](https://zenodo.org/badge/latestdoi/172910283)
-[![arXiv](https://img.shields.io/badge/arXiv-2403.05038-0969DA.svg)](https://arxiv.org/abs/2403.05038)
+[![JSS](https://img.shields.io/badge/JSS-10.18637%2Fjss.v116.i01-blue)](https://doi.org/10.18637/jss.v116.i01)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/fastverse/collapse)
 <!-- badges: end -->
 
@@ -79,9 +79,9 @@ In addition there are several [vignettes](<https://fastverse.org/collapse/articl
 <a href="https://raw.githubusercontent.com/fastverse/collapse/master/misc/collapse%20cheat%20sheet/collapse_cheat_sheet.pdf"><img src="https://raw.githubusercontent.com/fastverse/collapse/master/misc/collapse%20cheat%20sheet/preview/page1.png" width="330"/></a>  <!-- height="227" 294 -->
 <a href="https://raw.githubusercontent.com/fastverse/collapse/master/misc/collapse%20cheat%20sheet/collapse_cheat_sheet.pdf"><img src="https://raw.githubusercontent.com/fastverse/collapse/master/misc/collapse%20cheat%20sheet/preview/page2.png" width="330"/></a> 
 
-### Article on arXiv
+### JSS Article
 
-An [**article**](https://arxiv.org/abs/2403.05038) on *collapse* is forthcoming at [Journal of Statistical Software](https://www.jstatsoft.org/). 
+The [**collapse** article](https://doi.org/10.18637/jss.v116.i01) is published in the [Journal of Statistical Software](https://www.jstatsoft.org/) (volume 116, issue 1). It is the primary reference for academic use of the package and a concise introduction to its design and capabilities.
 
 ### Presentation at [useR 2022](https://user2022.r-project.org)
 
