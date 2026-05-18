@@ -31,9 +31,9 @@ _snaps
 ^\.DS_Store$
 ^revdep$
 \.orig$
-\.DS_store$
+^\.DS_store$
 .DS_store
-\.DS_Store$
+^\.DS_Store$
 .DS_Store
 testthat-problems.rds
 vignettes/figure
