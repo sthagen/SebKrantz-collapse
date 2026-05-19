@@ -30,9 +30,10 @@ jobs:
         with:
           extra-packages: |
             any::sf
-            github::SebKrantz/pkgdown
+            any::pkgdown
             local::.
           needs: website
+      # github::SebKrantz/pkgdown
 
       - name: Build site
         run: |
