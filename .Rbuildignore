@@ -6,6 +6,9 @@
 ^CONTRIBUTING\.md$
 ^README\.md$
 ^README\.Rmd$
+^CLAUDE\.md$
+^\.positai$
+^\.claude$
 ^cran-comments\.md$
 ^experimental$
 ^testing$
@@ -27,13 +30,9 @@ man/figures
 _cache$
 _snaps
 ^CITATION\.cff$
-^\.DS_Store$
 ^revdep$
 \.orig$
-\.DS_store$
-.DS_store
+(^|/)\.DS_Store$
 testthat-problems.rds
 vignettes/figure
 vignettes/cache
-
-

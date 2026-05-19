@@ -41,6 +41,8 @@ if(identical(Sys.getenv("NCRAN"), "TRUE")) {
 
 if(identical(Sys.getenv("LOCAL"), "TRUE"))
 test_that("weighted correlations are correct", {
+  skip_if_not_installed("weights")
+  skip_if_not_installed("cluster")
 
   # This is to fool very silly checks on CRAN scanning the code of the tests
   wtd.cors <- eval(parse(text = paste0("weights", ":", ":", "wtd.cors")))

@@ -125,7 +125,9 @@ if(identical(Sys.getenv("LOCAL"), "TRUE"))
 
 tol <- if(identical(Sys.getenv("LOCAL"), "TRUE")) 1e-5 else 1e-4
 
-if(requireNamespace("fixest", quietly = TRUE)) {
+has_fixest <- tryCatch(requireNamespace("fixest", quietly = TRUE), error = function(e) FALSE)
+
+if(has_fixest) {
 demean <- fixest::demean # eval(parse(text = paste0("fixest", ":", ":", "demean")))
 
 # lfe is back on CRAN: This now also seems to produce a warning !!!!!!!
@@ -229,7 +231,7 @@ test_that("fhdwithin with only continuous variables performs like baseresid (def
   expect_equal(fhdwithin(mtcNA, mtcars, variable.wise = TRUE), fhdwithin(mtcNA, m, variable.wise = TRUE), tolerance = tol)
 })
 
-if(requireNamespace("fixest", quietly = TRUE)) {
+if(has_fixest) {
 
 data <- wlddev
 data$year <- qF(data$year)

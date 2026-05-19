@@ -112,6 +112,12 @@ A safe way to set options affecting startup behavior is by using a \code{\link{.
 }
 }
 
+\references{
+Krantz S (2026).
+\emph{collapse}: Advanced and Fast Statistical Computing and Data Transformation in R.
+\emph{Journal of Statistical Software} \bold{116}(1), 1--38.
+\doi{10.18637/jss.v116.i01}
+}
 \seealso{
   \link[=collapse-documentation]{Collapse Overview}, \link{collapse-package}
 }

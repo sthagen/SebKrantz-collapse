@@ -126,6 +126,7 @@ static const R_CallMethodDef CallEntries[] = {
   {"C_geteptr", (DL_FUNC) &geteptr, 1},
   {"C_fcrosscolon", (DL_FUNC) &fcrosscolon, 4},
   {"C_fwtabulate", (DL_FUNC) &fwtabulate, 4},
+  {"C_GRP_default_drop", (DL_FUNC) &GRP_default_drop_C, 4},
   {"C_vecgcd", (DL_FUNC) &vecgcd, 1},
   {"C_issorted", (DL_FUNC) &Cissorted, 2},
   {"C_all_funs", (DL_FUNC) &all_funs, 1},

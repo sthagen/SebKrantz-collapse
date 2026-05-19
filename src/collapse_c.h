@@ -107,6 +107,7 @@ SEXP createeptr(SEXP x);
 SEXP geteptr(SEXP x);
 SEXP fcrosscolon(SEXP x, SEXP ngp, SEXP y, SEXP ckna);
 SEXP fwtabulate(SEXP x, SEXP w, SEXP ngp, SEXP ckna);
+SEXP GRP_default_drop_C(SEXP X, SEXP cols, SEXP namby, SEXP retgrp_);
 SEXP vecgcd(SEXP x);
 SEXP all_funs(SEXP x);
 SEXP unlock_collapse_namespace(SEXP env);
