@@ -1,15 +1,18 @@
 citHeader("To cite collapse in publications, please use:")
 
 bibentry(bibtype = "misc",
-         key = "krantz2024collapse",
-         title = "collapse: Advanced and Fast Statistical Computing and Data Transformation in R",
-         author = person("Sebastian", "Krantz"),
-         year = "2024",
-         eprint="2403.05038",
-         archivePrefix="arXiv",
-         primaryClass="stat.CO",
-         url = "https://arxiv.org/abs/2403.05038",
-         textVersion = "Krantz, S. (2024). collapse: Advanced and Fast Statistical Computing and Data Transformation in R [Preprint]. arXiv. https://arxiv.org/abs/2403.05038")
+         key = "krantz2026collapse",
+         title        = "{collapse}: Advanced and Fast Statistical Computing and Data Transformation in {R}",
+         author       = person(given = "Sebastian",
+                               family = "Krantz",
+                               email = "sebastian.krantz@kielinstitut.de"),
+         journal      = "Journal of Statistical Software",
+         year         = "2026",
+         volume       = "116",
+         number       = "1",
+         pages        = "1--38",
+         doi          = "10.18637/jss.v116.i01",
+         textVersion = "Krantz, S. (2026). collapse: Advanced and fast statistical computing and data transformation in R. Journal of Statistical Software, 116(1), 1–38. https://doi.org/10.18637/jss.v116.i01")
 
 year <- sub("-.*", "", meta$Date)
 note <- sprintf("R package version %s", meta$Version)

@@ -95,7 +95,7 @@ GRP.GRP <- function(X, ...) X
 
 GRP.default <- function(X, by = NULL, sort = .op[["sort"]], decreasing = FALSE, na.last = TRUE,
                         return.groups = TRUE, return.order = sort, method = "auto",
-                        call = TRUE, ...) {
+                        drop = TRUE, call = TRUE, ...) {
 
   use.group <- switch(method, auto = !sort, hash = TRUE, radix = FALSE, stop("method needs to be 'auto', 'hash' or 'radix'."))
 
@@ -103,13 +103,13 @@ GRP.default <- function(X, by = NULL, sort = .op[["sort"]], decreasing = FALSE, 
 
   if(is.list(X)) {
     if(inherits(X, "GRP")) return(X)
-    if(is.null(by)) {
+    by_null <- is.null(by)
+    if(by_null) {
       by <- seq_along(unclass(X))
       # # This is so that fgroup_by(iris, Species = GRP(Species)) is possible.
       # if(length(by) == 1L && is.list(.subset2(X, 1L)) && inherits(.subset2(X, 1L), "GRP")) return(.subset2(X, 1L))
       namby <- attr(X, "names")
       if(is.null(namby)) attr(X, "names") <- namby <- paste0("Group.", by)
-      o <- switchGRP(X, na.last, decreasing, return.groups || !use.group, TRUE, sort, use.group)
     } else {
       if(is.call(by)) {
         namby <- all.vars(by, unique = FALSE)
@@ -126,8 +126,26 @@ GRP.default <- function(X, by = NULL, sort = .op[["sort"]], decreasing = FALSE, 
           attr(X, "names") <- paste0("Group.", seq_along(unclass(X))) # best ?
         }
       }
-      o <- switchGRP(.subset(X, by), na.last, decreasing, return.groups || !use.group, TRUE, sort, use.group)
     }
+    # drop = FALSE: full Cartesian product of (factor) levels, computed in C.
+    # Falls through to the existing path when no grouping column is a factor (matches dplyr).
+    if(!drop) {
+      cols <- if(by_null) unclass(X) else .subset(unclass(X), by)
+      if(any(.Call(C_vtypes, cols, 2L))) {
+        res <- .Call(C_GRP_default_drop, X, cols, namby, return.groups)
+        return(`oldClass<-`(list(N.groups = res[[1L]],
+                              group.id = res[[2L]],
+                              group.sizes = res[[3L]],
+                              groups = if(return.groups) res[[5L]] else NULL,
+                              group.vars = namby,
+                              ordered = c(ordered = NA, sorted = NA),
+                              order = NULL,
+                              group.starts = res[[4L]],
+                              call = if(call) match.call() else NULL), "GRP"))
+      }
+    }
+    o <- switchGRP(if(by_null) X else .subset(X, by),
+                   na.last, decreasing, return.groups || !use.group, TRUE, sort, use.group)
   } else {
    if(length(by)) stop("by can only be used to subset list / data.frame columns")
    namby <- l1orlst(as.character(substitute(X))) # paste(all.vars(call), collapse = ".") # good in all circumstances ?
@@ -382,7 +400,7 @@ GRP.pseries <- function(X, effect = 1L, ..., group.sizes = TRUE, return.groups =
 GRP.pdata.frame <- function(X, effect = 1L, ..., group.sizes = TRUE, return.groups = TRUE, call = TRUE)
   GRP.pseries(X, effect, ..., group.sizes = group.sizes, return.groups = return.groups, call = call)
 
-fgroup_by <- function(.X, ..., sort = .op[["sort"]], decreasing = FALSE, na.last = TRUE, return.groups = TRUE, return.order = sort, method = "auto") {          #   e <- substitute(list(...)) # faster but does not preserve attributes of unique groups !
+fgroup_by <- function(.X, ..., sort = .op[["sort"]], decreasing = FALSE, na.last = TRUE, return.groups = TRUE, return.order = sort, method = "auto", .drop = TRUE) {          #   e <- substitute(list(...)) # faster but does not preserve attributes of unique groups !
   clx <- oldClass(.X)
   oldClass(.X) <- NULL
   m <- match(c("GRP_df", "grouped_df", "data.frame"), clx, nomatch = 0L)
@@ -416,7 +434,7 @@ fgroup_by <- function(.X, ..., sort = .op[["sort"]], decreasing = FALSE, na.last
       } else names(e) <- vars
     }
   }
-  attr(.X, "groups") <- GRP.default(e, NULL, sort, decreasing, na.last, return.groups, return.order, method, FALSE)
+  attr(.X, "groups") <- GRP.default(e, NULL, sort, decreasing, na.last, return.groups, return.order, method, .drop, FALSE)
   # if(any(clx == "sf")) oldClass(.X) <- clx[clx != "sf"]
   # attr(.X, "groups") <- GRP.default(fselect(if(m[2L]) fungroup(.X) else .X, ...), NULL, sort, decreasing, na.last, TRUE, return.order, method, FALSE)
     # Needed: wlddev %>% fgroup_by(country) gives error if dplyr is loaded. Also sf objects etc..

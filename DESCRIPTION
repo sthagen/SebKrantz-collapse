@@ -1,7 +1,7 @@
 Package: collapse
 Title: Advanced and Fast Data Transformation
-Version: 2.1.6
-Date: 2025-12-21
+Version: 2.1.7
+Date: 2026-05-17
 Authors@R: c(
            person("Sebastian", "Krantz", role = c("aut", "cre"), 
                   email = "sebastian.krantz@graduateinstitute.ch", 
@@ -31,13 +31,14 @@ Description: A large C/C++-based package for advanced data transformation and
     fast data object conversions, functions for memory efficient R programming, and 
     helpers to effectively deal with variable labels, attributes, and missing data. It 
     seamlessly supports base R objects/classes as well as 'units', 'integer64', 'xts'/
-    'zoo', 'tibble', 'grouped_df', 'data.table', 'sf', and 'pseries'/'pdata.frame'.
+    'zoo', 'tibble', 'grouped_df', 'data.table', 'sf', and 'pseries'/'pdata.frame'. 
+    For a concise overview of the package see Krantz (2026) <doi:10.18637/jss.v116.i01>.
 URL: https://fastverse.org/collapse/, https://github.com/fastverse/collapse
 BugReports: https://github.com/fastverse/collapse/issues
 License: GPL (>= 2) | file LICENSE
 Encoding: UTF-8
 LazyData: true
-Depends: R (>= 3.5.0)
+Depends: R (>= 4.1.0)
 Imports: Rcpp (>= 1.0.1)
 LinkingTo: Rcpp
 Suggests: fastverse, data.table, magrittr, kit, xts, zoo, plm, fixest, vars, 
