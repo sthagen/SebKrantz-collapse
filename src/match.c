@@ -152,7 +152,8 @@ SEXP match_single(SEXP x, SEXP table, SEXP nomatch) {
     } else goto bigint;
     anyNA = !(inherits(x, "na.included") && inherits(table, "na.included"));
   } else if (tx == LGLSXP) {
-    M = 3;
+    if(TYPEOF(table) == LGLSXP) M = 3;
+    else { tx = INTSXP; goto bigint; } // table is not logical: cannot assume values are restricted to {0, 1, NA}, need generic hashing to avoid spurious NA collisions (#870)
   } else error("Type %s is not supported.", type2char(tx));
 
   int *restrict h = (int*)R_Calloc(M, int); // Table to save the hash values, table has size M
