@@ -178,3 +178,28 @@ test_that("fmatch works with logical data", {
   expect_equal(fmatch(FALSE, x), 2L)
 })
 
+test_that("fmatch does not match logical NA in x to non-logical values in table (#870)", {
+  table_int <- c(0L, 1L, 2L)
+  expect_identical(fmatch(c(FALSE, TRUE, NA), table_int), match(c(FALSE, TRUE, NA), table_int))
+  expect_identical(fmatch(NA, table_int), NA_integer_)
+  expect_identical(NA %iin% table_int, integer(0))
+
+  # Larger table where the colliding value is at a different position
+  table_int2 <- c(5L, 2L, 0L, 1L, 9L)
+  expect_identical(fmatch(c(FALSE, TRUE, NA), table_int2), match(c(FALSE, TRUE, NA), table_int2))
+
+  # table actually containing NA_integer_: NA in x should match it
+  table_int3 <- c(0L, 1L, NA_integer_)
+  expect_identical(fmatch(c(FALSE, TRUE, NA), table_int3), match(c(FALSE, TRUE, NA), table_int3))
+
+  # Reverse direction (already worked prior to the fix)
+  expect_identical(fmatch(table_int, c(FALSE, TRUE, NA)), match(table_int, c(FALSE, TRUE, NA)))
+
+  # table is double
+  table_dbl <- c(0, 1, 2)
+  expect_identical(fmatch(c(FALSE, TRUE, NA), table_dbl), match(c(FALSE, TRUE, NA), table_dbl))
+
+  # genuine logical-vs-logical matching still works, including NA matching NA
+  expect_identical(fmatch(c(FALSE, TRUE, NA), c(TRUE, NA, FALSE)), match(c(FALSE, TRUE, NA), c(TRUE, NA, FALSE)))
+})
+
